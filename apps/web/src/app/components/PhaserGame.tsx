@@ -8,8 +8,8 @@ import { io, Socket } from "socket.io-client";
 const MAP: number[][] = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0, 2, 2, 0, 0, 2, 2, 0, 1],
-  [1, 0, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0, 2, 2, 0, 0, 2, 2, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -19,8 +19,8 @@ const MAP: number[][] = [
   [1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 0, 0, 0, 3, 3, 3, 0, 0, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0, 2, 2, 0, 0, 2, 2, 0, 1],
-  [1, 0, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0, 2, 2, 0, 0, 2, 2, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ];
@@ -28,6 +28,7 @@ const MAP: number[][] = [
 const TILE = 48;
 const COLS = MAP[0]!.length;
 const ROWS = MAP.length;
+const DECOR_DEPTH = 3.5;
 
 const COLOR = {
   floor:        0x4a4a6a,
@@ -56,6 +57,63 @@ const COLOR = {
 const CHAR_FRAME_W = 48; // single frame width  — adjust if needed
 const CHAR_FRAME_H = 96; // single frame height — adjust if needed
 
+const DECOR_ASSETS = [
+  "desk",
+  "plant1",
+  "plant2",
+  "printer",
+  "shelves",
+  "sofachair",
+  "splant1",
+  "splant2",
+  "storage",
+  "vending",
+  "water",
+  "whiteboard",
+  "chairs",
+  "monitor",
+  "coffemac",
+  "lamp",
+  "chair1",
+  "keyboardmouse"
+] as const;
+
+type DecorItem = {
+  key: (typeof DECOR_ASSETS)[number];
+  tileX: number;
+  tileY: number;
+  width: number;
+  height: number;
+  depth?: number;
+  originX?: number;
+  originY?: number;
+};
+
+const DECOR_LAYOUT: DecorItem[] = [
+  { key: "desk", tileX: 1.1, tileY: 5.25, width: TILE * 4, height: TILE * 2.9 },
+  { key: "desk", tileX: 15.1, tileY: 6.2, width: TILE * 4, height: TILE * 2.9 },
+  { key: "whiteboard", tileX: 10.7, tileY: 1.5, width: TILE * 1.6, height: TILE * 1.2, depth: 2.8, originX: 0, originY: 1 },
+  { key: "sofachair", tileX: 5.0, tileY: 8.2, width: TILE * 1.3, height: TILE * 1.4 },
+  { key: "sofachair", tileX: 6.0, tileY: 8.2, width: TILE * 1.3, height: TILE * 1.4 },
+  { key: "printer", tileX: 17.6, tileY: 4.6, width: TILE * 1.35, height: TILE * 1.05 },
+  { key: "shelves", tileX: 15.2, tileY: 2.3, width: TILE * 2.4, height: TILE *2.0 },
+  { key: "storage", tileX: 12.2, tileY: 2.5, width: TILE * 2.5, height: TILE * 2.4 },
+  { key: "vending", tileX: 4.2, tileY: 12.4, width: TILE * 1.7, height: TILE * 2.6, depth: 3.2 },
+  { key: "water", tileX: 9.2, tileY: 12.6, width: TILE * 2.05, height: TILE * 2.95, depth: 3.2 },
+  { key: "plant1", tileX: 3.1, tileY: 1.55, width: TILE * 1.05, height: TILE * 1.95 },
+  { key: "plant1", tileX: 4.3, tileY: 16.1, width: TILE * 1.05, height: TILE * 1.95 },
+  { key: "plant1", tileX: 10.1, tileY: 16.1, width: TILE * 1.05, height: TILE * 1.95 },
+  { key: "plant2", tileX: 17.6, tileY: 2.3, width: TILE * 1.61, height: TILE * 1.7 },
+  { key: "splant1", tileX: 6.1, tileY: 12.5, width: TILE * 0.8, height: TILE * 0.8, depth: 3.1 },
+  { key: "splant2", tileX: 11.1, tileY: 12.5, width: TILE * 0.9, height: TILE * 0.8, depth: 3.1 },
+  { key: "chairs", tileX: 4.8, tileY: 2.5, width: TILE * 3.4, height: TILE * 2.5, depth: 3.1 },
+  { key: "coffemac", tileX: 8.0, tileY: 2.5, width: TILE * 3.0, height: TILE * 2.5, depth: 3.1 },
+  { key: "monitor", tileX: 16.1, tileY: 4.2, width: TILE * 1.6, height: TILE * 1.3, depth: 4.1 },
+  { key: "chair1", tileX: 1.3, tileY: 2.8, width: TILE * 1.6, height: TILE * 1.6, depth: 2.7 },
+  { key: "keyboardmouse", tileX: 16.2, tileY: 4.74, width: TILE * 1.62, height: TILE * 0.6, depth: 4.1 },
+
+];
+
 class GameScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -82,6 +140,9 @@ class GameScene extends Phaser.Scene {
       frameHeight: CHAR_FRAME_H,
     });
     this.load.image("floor",  "/assets/tile.png");
+    DECOR_ASSETS.forEach((asset) => {
+      this.load.image(asset, `/assets/${asset}.png`);
+    });
   }
 
   create() {
@@ -120,8 +181,6 @@ class GameScene extends Phaser.Scene {
         }
 
         if (tile === 2) {
-          this.add.rectangle(x + 4, y + 4, TILE - 8, TILE - 8, COLOR.desk).setOrigin(0).setDepth(1);
-          this.add.rectangle(x + 6, y + 6, TILE - 16, TILE - 20, COLOR.deskTop).setOrigin(0).setDepth(2);
           this.addWall(x, y);
         }
 
@@ -134,6 +193,8 @@ class GameScene extends Phaser.Scene {
     }
 
     // ── Room labels ──────────────────────────────────────────
+    this.addDecor();
+
     this.add.text(7.5 * TILE, 8.8 * TILE, "Meeting Room", {
       fontSize: "11px", color: "#aaaacc", fontFamily: "monospace",
     }).setOrigin(0.5).setDepth(3);
@@ -305,6 +366,16 @@ class GameScene extends Phaser.Scene {
     this.socket.on("player:left", (id: string) => {
       this.otherPlayers[id]?.destroy();
       delete this.otherPlayers[id];
+    });
+  }
+
+  private addDecor() {
+    DECOR_LAYOUT.forEach((item) => {
+      this.add
+        .image(item.tileX * TILE, item.tileY * TILE, item.key)
+        .setOrigin(item.originX ?? 0, item.originY ?? 1)
+        .setDepth(item.depth ?? DECOR_DEPTH)
+        .setDisplaySize(item.width, item.height);
     });
   }
 
