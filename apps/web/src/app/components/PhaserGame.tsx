@@ -73,7 +73,6 @@ const DECOR_ASSETS = [
   "chairs",
   "monitor",
   "coffemac",
-  "lamp",
   "chair1",
   "keyboardmouse"
 ] as const;
@@ -90,26 +89,26 @@ type DecorItem = {
 };
 
 const DECOR_LAYOUT: DecorItem[] = [
-  { key: "desk", tileX: 1.1, tileY: 5.25, width: TILE * 4, height: TILE * 2.9 },
-  { key: "desk", tileX: 15.1, tileY: 6.2, width: TILE * 4, height: TILE * 2.9 },
+  { key: "desk", tileX: 1.1, tileY: 5.25, width: TILE * 4, height: TILE * 2.7 },
+  { key: "desk", tileX: 15.1, tileY: 6.2, width: TILE * 4, height: TILE * 2.7 },
   { key: "whiteboard", tileX: 10.7, tileY: 1.5, width: TILE * 1.6, height: TILE * 1.2, depth: 2.8, originX: 0, originY: 1 },
   { key: "sofachair", tileX: 5.0, tileY: 8.2, width: TILE * 1.3, height: TILE * 1.4 },
   { key: "sofachair", tileX: 6.0, tileY: 8.2, width: TILE * 1.3, height: TILE * 1.4 },
   { key: "printer", tileX: 17.6, tileY: 4.6, width: TILE * 1.35, height: TILE * 1.05 },
   { key: "shelves", tileX: 15.2, tileY: 2.3, width: TILE * 2.4, height: TILE *2.0 },
-  { key: "storage", tileX: 12.2, tileY: 2.5, width: TILE * 2.5, height: TILE * 2.4 },
-  { key: "vending", tileX: 4.2, tileY: 12.4, width: TILE * 1.7, height: TILE * 2.6, depth: 3.2 },
-  { key: "water", tileX: 9.2, tileY: 12.6, width: TILE * 2.05, height: TILE * 2.95, depth: 3.2 },
+  { key: "storage", tileX: 12.2, tileY: 2.5, width: TILE * 2.5, height: TILE * 2.7 },
+  { key: "vending", tileX: 4.2, tileY: 12.4, width: TILE * 1.7, height: TILE * 2.6, depth: 2.7 },
+  { key: "water", tileX: 9.2, tileY: 12.6, width: TILE * 2.05, height: TILE * 2.95, depth: 2.7 },
   { key: "plant1", tileX: 3.1, tileY: 1.55, width: TILE * 1.05, height: TILE * 1.95 },
   { key: "plant1", tileX: 4.3, tileY: 16.1, width: TILE * 1.05, height: TILE * 1.95 },
   { key: "plant1", tileX: 10.1, tileY: 16.1, width: TILE * 1.05, height: TILE * 1.95 },
   { key: "plant2", tileX: 17.6, tileY: 2.3, width: TILE * 1.61, height: TILE * 1.7 },
   { key: "splant1", tileX: 6.1, tileY: 12.5, width: TILE * 0.8, height: TILE * 0.8, depth: 3.1 },
   { key: "splant2", tileX: 11.1, tileY: 12.5, width: TILE * 0.9, height: TILE * 0.8, depth: 3.1 },
-  { key: "chairs", tileX: 4.8, tileY: 2.5, width: TILE * 3.4, height: TILE * 2.5, depth: 3.1 },
+  { key: "chairs", tileX: 4.8, tileY: 2.5, width: TILE * 3.4, height: TILE * 2.5, depth: 2.7 },
   { key: "coffemac", tileX: 8.0, tileY: 2.5, width: TILE * 3.0, height: TILE * 2.5, depth: 3.1 },
   { key: "monitor", tileX: 16.1, tileY: 4.2, width: TILE * 1.6, height: TILE * 1.3, depth: 4.1 },
-  { key: "chair1", tileX: 1.3, tileY: 2.8, width: TILE * 1.6, height: TILE * 1.6, depth: 2.7 },
+  { key: "chair1", tileX: 1.3, tileY: 2.8, width: TILE * 1.8, height: TILE * 1.8, depth: 2.7 },
   { key: "keyboardmouse", tileX: 16.2, tileY: 4.74, width: TILE * 1.62, height: TILE * 0.6, depth: 4.1 },
 
 ];
@@ -148,6 +147,7 @@ class GameScene extends Phaser.Scene {
   create() {
     const mapW = COLS * TILE;
     const mapH = ROWS * TILE;
+    const roomId = this.game.registry.get("roomId") as string;
 
     this.wallGroup = this.physics.add.staticGroup();
 
@@ -303,7 +303,7 @@ class GameScene extends Phaser.Scene {
     // ── Player ───────────────────────────────────────────────
     this.player = this.physics.add.sprite(9 * TILE, 5 * TILE, "character");
     this.player.setCollideWorldBounds(true);
-    this.player.setDepth(5);
+    this.player.setDepth(2.8);
     this.player.setScale(1.2); // scale up slightly to match 48px tile size
     this.player.play("idle");
 
@@ -335,6 +335,7 @@ class GameScene extends Phaser.Scene {
       name: "Player1",
       x: this.player.x,
       y: this.player.y,
+      roomId,
     });
 
     this.socket.on("players:init", (players: any[]) => {
@@ -460,7 +461,11 @@ class GameScene extends Phaser.Scene {
   }
 }
 
-export default function PhaserGame() {
+interface PhaserGameProps {
+  roomId: string;
+}
+
+export default function PhaserGame({ roomId }: PhaserGameProps) {
   const gameRef = useRef<Phaser.Game | null>(null);
 
   useEffect(() => {
@@ -477,13 +482,20 @@ export default function PhaserGame() {
       },
       scene: [GameScene],
       parent: "game-container",
+      callbacks: {
+        preBoot: (game) => {
+          game.registry.set("roomId", roomId);
+        },
+      },
     });
 
     return () => {
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
-  }, []);
+  }, [roomId]);
 
   return <div id="game-container" className="w-full h-screen" />;
 }
+
+

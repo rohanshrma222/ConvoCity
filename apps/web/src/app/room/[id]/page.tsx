@@ -1,9 +1,15 @@
 import GameCanvas from "../../components/GameCanvas";
 
-export default function RoomPage() {
+interface RoomPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function RoomPage({ params }: RoomPageProps) {
+  const { id } = await params;
+
   return (
     <main className="w-full h-screen overflow-hidden">
-      <GameCanvas />
+      <GameCanvas roomId={id} />
     </main>
   );
 }

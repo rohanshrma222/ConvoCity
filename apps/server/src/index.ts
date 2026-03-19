@@ -14,36 +14,93 @@ interface Player {
   x: number;
   y: number;
   name: string;
+  roomId: string;
 }
 
-const players: Record<string, Player> = {};
+interface RoomState {
+  id: string;
+  players: Record<string, Player>;
+}
+
+const rooms: Record<string, RoomState> = {};
+
+const getOrCreateRoom = (roomId: string): RoomState => {
+  if (!rooms[roomId]) {
+    rooms[roomId] = {
+      id: roomId,
+      players: {},
+    };
+  }
+
+  return rooms[roomId];
+};
+
+const removePlayerFromRoom = (playerId: string, roomId?: string) => {
+  if (!roomId) return;
+
+  const room = rooms[roomId];
+  if (!room) return;
+
+  delete room.players[playerId];
+
+  if (Object.keys(room.players).length === 0) {
+    delete rooms[roomId];
+  }
+};
 
 io.on("connection", (socket) => {
   console.log("Player connected:", socket.id);
 
-  // new player joins
-  socket.on("player:join", (data: { name: string; x: number; y: number }) => {
-    players[socket.id] = { id: socket.id, ...data };
-    // send existing players to new player
-    socket.emit("players:init", Object.values(players));
-    // tell everyone else about new player
-    socket.broadcast.emit("player:joined", players[socket.id]);
+  socket.on("player:join", (data: { name: string; x: number; y: number; roomId: string }) => {
+    const roomId = data.roomId.trim();
+    if (!roomId) return;
+
+    const previousRoomId = socket.data.roomId as string | undefined;
+    if (previousRoomId && previousRoomId !== roomId) {
+      socket.leave(previousRoomId);
+      removePlayerFromRoom(socket.id, previousRoomId);
+      socket.to(previousRoomId).emit("player:left", socket.id);
+    }
+
+    const room = getOrCreateRoom(roomId);
+    const player: Player = {
+      id: socket.id,
+      x: data.x,
+      y: data.y,
+      name: data.name,
+      roomId,
+    };
+
+    room.players[socket.id] = player;
+    socket.data.roomId = roomId;
+    socket.join(roomId);
+
+    socket.emit("players:init", Object.values(room.players));
+    socket.to(roomId).emit("player:joined", player);
   });
 
-  // player moves
-  socket.on("player:move", (data: { x: number; y: number }) => {
-    const player = players[socket.id];
+  socket.on("player:move", (data: { x: number; y: number; anim: string }) => {
+    const roomId = socket.data.roomId as string | undefined;
+    if (!roomId) return;
+
+    const room = rooms[roomId];
+    const player = room?.players[socket.id];
     if (!player) return;
 
     player.x = data.x;
     player.y = data.y;
-    socket.broadcast.emit("player:moved", { id: socket.id, ...data });
+
+    socket.to(roomId).emit("player:moved", { id: socket.id, ...data });
   });
 
-  // player leaves
   socket.on("disconnect", () => {
-    delete players[socket.id];
-    io.emit("player:left", socket.id);
+    const roomId = socket.data.roomId as string | undefined;
+
+    removePlayerFromRoom(socket.id, roomId);
+
+    if (roomId) {
+      socket.to(roomId).emit("player:left", socket.id);
+    }
   });
 });
 
