@@ -81,6 +81,7 @@ class GameScene extends Phaser.Scene {
       frameWidth:  CHAR_FRAME_W,
       frameHeight: CHAR_FRAME_H,
     });
+    this.load.image("floor",  "/assets/tile.png");
   }
 
   create() {
@@ -99,8 +100,11 @@ class GameScene extends Phaser.Scene {
         // checkerboard floor
         const isAlt = (row + col) % 2 === 0;
         this.add
-          .rectangle(x, y, TILE, TILE, isAlt ? COLOR.floor : COLOR.floorAlt)
-          .setOrigin(0).setDepth(0);
+          .image(x, y, "floor")
+          .setOrigin(0)
+          .setDepth(0)
+          .setDisplaySize(TILE, TILE)  // ← FORCE 48×48 regardless of source size
+          .setAlpha(isAlt ? 1 : 0.85); // ← checkerboard effect via opacity
 
         // meeting room floor tint
         if (row >= 7 && row <= 10 && col >= 5 && col <= 10) {
