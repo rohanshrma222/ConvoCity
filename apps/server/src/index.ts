@@ -32,11 +32,12 @@ io.on("connection", (socket) => {
 
   // player moves
   socket.on("player:move", (data: { x: number; y: number }) => {
-    if (players[socket.id]) {
-      players[socket.id].x = data.x;
-      players[socket.id].y = data.y;
-      socket.broadcast.emit("player:moved", { id: socket.id, ...data });
-    }
+    const player = players[socket.id];
+    if (!player) return;
+
+    player.x = data.x;
+    player.y = data.y;
+    socket.broadcast.emit("player:moved", { id: socket.id, ...data });
   });
 
   // player leaves

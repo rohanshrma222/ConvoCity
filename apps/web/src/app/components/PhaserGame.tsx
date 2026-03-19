@@ -3,95 +3,383 @@ import { useEffect, useRef } from "react";
 import Phaser from "phaser";
 import { io, Socket } from "socket.io-client";
 
+// ─── Map Layout ───────────────────────────────────────────────
+// 0 = floor  1 = outer wall  2 = desk  3 = meeting room wall
+const MAP: number[][] = [
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0, 2, 2, 0, 0, 2, 2, 0, 1],
+  [1, 0, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0, 2, 2, 0, 0, 2, 2, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 3, 3, 3, 0, 0, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0, 2, 2, 0, 0, 2, 2, 0, 1],
+  [1, 0, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0, 2, 2, 0, 0, 2, 2, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+];
+
+const TILE = 48;
+const COLS = MAP[0]!.length;
+const ROWS = MAP.length;
+
+const COLOR = {
+  floor:        0x4a4a6a,
+  floorAlt:     0x424260,
+  outerWall:    0x2a2a40,
+  desk:         0x8b6914,
+  deskTop:      0xc49a1e,
+  meetingWall:  0x3a3a5a,
+  meetingFloor: 0x3d3d5c,
+};
+
+// ─── RPG Maker MV Character Spritesheet Layout ────────────────
+// Standard MV format: 576×384px total
+// 12 characters per sheet (4 cols × 3 rows of characters)
+// Each character cell = 144×192px (3 walk frames × 4 directions)
+// Each individual frame = 48×48px
+//
+// We use the FIRST character (top-left cell):
+//   Down  frames: row 0, cols 1-3  (middle col = idle)
+//   Left  frames: row 1, cols 1-3
+//   Right frames: row 2, cols 1-3
+//   Up    frames: row 3, cols 1-3
+//
+// If your image is a different size, adjust CHAR_W / CHAR_H below
+
+const CHAR_FRAME_W = 48; // single frame width  — adjust if needed
+const CHAR_FRAME_H = 96; // single frame height — adjust if needed
+
 class GameScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+  private wasd!: {
+    up:    Phaser.Input.Keyboard.Key;
+    down:  Phaser.Input.Keyboard.Key;
+    left:  Phaser.Input.Keyboard.Key;
+    right: Phaser.Input.Keyboard.Key;
+  };
   private socket!: Socket;
   private otherPlayers: Record<string, Phaser.GameObjects.Sprite> = {};
+  private wallGroup!: Phaser.Physics.Arcade.StaticGroup;
+  private lastDirection = "down";
 
   constructor() {
     super({ key: "GameScene" });
   }
 
   preload() {
-    // placeholder — replace with real sprite sheet later
+    // ── load character spritesheet ──
+    // Save your Characters_MV.png to apps/web/public/assets/character.png
+    this.load.spritesheet("character", "/assets/Characters.png", {
+      frameWidth:  CHAR_FRAME_W,
+      frameHeight: CHAR_FRAME_H,
+    });
   }
 
   create() {
-    // create player texture
-    const graphics = this.add.graphics();
-    graphics.fillStyle(0x4f46e5);
-    graphics.fillRect(0, 0, 32, 32);
-    graphics.generateTexture("player", 32, 32);
-    graphics.destroy();
+    const mapW = COLS * TILE;
+    const mapH = ROWS * TILE;
 
-    // local player
-    this.player = this.physics.add.sprite(400, 300, "player");
+    this.wallGroup = this.physics.add.staticGroup();
+
+    // ── Draw world ───────────────────────────────────────────
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const x    = col * TILE;
+        const y    = row * TILE;
+        const tile = MAP[row]![col]!;
+
+        // checkerboard floor
+        const isAlt = (row + col) % 2 === 0;
+        this.add
+          .rectangle(x, y, TILE, TILE, isAlt ? COLOR.floor : COLOR.floorAlt)
+          .setOrigin(0).setDepth(0);
+
+        // meeting room floor tint
+        if (row >= 7 && row <= 10 && col >= 5 && col <= 10) {
+          this.add
+            .rectangle(x, y, TILE, TILE, COLOR.meetingFloor)
+            .setOrigin(0).setDepth(0.5);
+        }
+
+        if (tile === 1) {
+          this.add.rectangle(x, y, TILE, TILE, COLOR.outerWall).setOrigin(0).setDepth(1);
+          this.add.rectangle(x, y, TILE, 4, 0x5a5a7a).setOrigin(0).setDepth(2);
+          this.addWall(x, y);
+        }
+
+        if (tile === 2) {
+          this.add.rectangle(x + 4, y + 4, TILE - 8, TILE - 8, COLOR.desk).setOrigin(0).setDepth(1);
+          this.add.rectangle(x + 6, y + 6, TILE - 16, TILE - 20, COLOR.deskTop).setOrigin(0).setDepth(2);
+          this.addWall(x, y);
+        }
+
+        if (tile === 3) {
+          this.add.rectangle(x, y, TILE, TILE, COLOR.meetingWall).setOrigin(0).setDepth(1);
+          this.add.rectangle(x, y, TILE, 3, 0x6a6a9a).setOrigin(0).setDepth(2);
+          this.addWall(x, y);
+        }
+      }
+    }
+
+    // ── Room labels ──────────────────────────────────────────
+    this.add.text(7.5 * TILE, 8.8 * TILE, "Meeting Room", {
+      fontSize: "11px", color: "#aaaacc", fontFamily: "monospace",
+    }).setOrigin(0.5).setDepth(3);
+
+    this.add.text(15 * TILE, 2.5 * TILE, "Open Office", {
+      fontSize: "11px", color: "#888899", fontFamily: "monospace",
+    }).setOrigin(0.5).setDepth(3);
+
+    // ── Register animations ───────────────────────────────────
+    // RPG Maker MV standard layout:
+    // Each direction has 3 frames: left-step, idle, right-step
+    // Row 0 = down, Row 1 = left, Row 2 = right, Row 3 = up
+    // Frames per row = depends on image width ÷ 48
+    // For a 576px wide sheet: 12 frames per row
+    // First character occupies cols 0-2 of each row
+    
+    //Character 1
+    this.anims.create({
+      key: "walk-down",
+      frames: this.anims.generateFrameNumbers("character", {
+        frames: [1, 0, 1, 2], // idle, left-step, idle, right-step
+      }),
+      frameRate: 8,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: "walk-left",
+      frames: this.anims.generateFrameNumbers("character", {
+        frames: [13, 12, 13, 14], // row 1 = left direction
+      }),
+      frameRate: 8,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: "walk-right",
+      frames: this.anims.generateFrameNumbers("character", {
+        frames: [25, 24, 25, 26], // row 2 = right direction
+      }),
+      frameRate: 8,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: "walk-up",
+      frames: this.anims.generateFrameNumbers("character", {
+        frames: [37, 36, 37, 38], // row 3 = up direction
+      }),
+      frameRate: 8,
+      repeat: -1,
+    });
+
+    // idle — just the centre frame facing down
+    this.anims.create({
+      key: "idle",
+      frames: [{ key: "character", frame: 1 }],
+      frameRate: 1,
+      repeat: 0,
+    });
+
+    // Character 2 animations (offset by 3 frames)
+    this.anims.create({
+      key: "other-walk-down",
+      frames: this.anims.generateFrameNumbers("character", {
+        frames: [4, 3, 4, 5],
+      }),
+      frameRate: 8,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: "other-walk-left",
+      frames: this.anims.generateFrameNumbers("character", {
+        frames: [16, 15, 16, 17],
+      }),
+      frameRate: 8,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: "other-walk-right",
+      frames: this.anims.generateFrameNumbers("character", {
+        frames: [28, 27, 28, 29],
+      }),
+      frameRate: 8,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: "other-walk-up",
+      frames: this.anims.generateFrameNumbers("character", {
+        frames: [40, 39, 40, 41],
+      }),
+      frameRate: 8,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: "other-idle",
+      frames: [{ key: "character", frame: 4 }], // frame 4 = char 2 idle facing down
+      frameRate: 1,
+      repeat: 0,
+    });
+
+    // ── Player ───────────────────────────────────────────────
+    this.player = this.physics.add.sprite(9 * TILE, 5 * TILE, "character");
     this.player.setCollideWorldBounds(true);
+    this.player.setDepth(5);
+    this.player.setScale(1.2); // scale up slightly to match 48px tile size
+    this.player.play("idle");
+
+    // tighter physics body (character is smaller than the full frame)
+    this.player.setSize(24, 40);
+    this.player.setOffset(12, 12);
+
+    this.physics.add.collider(this.player, this.wallGroup);
+
+    // ── Input ────────────────────────────────────────────────
     this.cursors = this.input.keyboard!.createCursorKeys();
+    this.wasd = {
+      up:    this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W),
+      down:  this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S),
+      left:  this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A),
+      right: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D),
+    };
 
-    // camera follows local player
+    // ── Camera ───────────────────────────────────────────────
     this.cameras.main.startFollow(this.player);
+    this.cameras.main.setBounds(0, 0, mapW, mapH);
+    this.cameras.main.setZoom(1.4);
+    this.physics.world.setBounds(0, 0, mapW, mapH);
 
-    // --- Socket.io ---
+    // ── Socket.io ────────────────────────────────────────────
     this.socket = io("http://localhost:3001");
 
     this.socket.emit("player:join", {
       name: "Player1",
-      x: 400,
-      y: 300,
+      x: this.player.x,
+      y: this.player.y,
     });
 
-    // render all existing players when first joining
     this.socket.on("players:init", (players: any[]) => {
       players.forEach((p) => {
-        if (p.id !== this.socket.id) {
-          this.addOtherPlayer(p);
-        }
+        if (p.id !== this.socket.id) this.addOtherPlayer(p);
       });
     });
 
-    // a new player joined the room
-    this.socket.on("player:joined", (p: { id: string; x: number; y: number }) => {
-      this.addOtherPlayer(p);
-    });
+    this.socket.on(
+      "player:joined",
+      (p: { id: string; x: number; y: number }) => this.addOtherPlayer(p)
+    );
 
-    // another player moved
-    this.socket.on("player:moved", ({ id, x, y }: { id: string; x: number; y: number }) => {
-      this.otherPlayers[id]?.setPosition(x, y);
-    });
+    this.socket.on(
+      "player:moved",
+      ({ id, x, y, anim }: { id: string; x: number; y: number; anim: string }) => {
+        const other = this.otherPlayers[id];
+        if (other) {
+          other.setPosition(x, y);
+          // map local anim key → other player anim key
+          const otherAnim = anim === "idle"
+            ? "other-idle"
+            : anim.replace("walk-", "other-walk-");
+          other.play(otherAnim, true);
+        }
+      }
+    );
 
-    // a player left
     this.socket.on("player:left", (id: string) => {
       this.otherPlayers[id]?.destroy();
       delete this.otherPlayers[id];
     });
   }
 
+  private addWall(x: number, y: number) {
+    const wall = this.add.rectangle(
+      x + TILE / 2, y + TILE / 2, TILE, TILE, 0x000000, 0
+    );
+    this.physics.add.existing(wall, true);
+    this.wallGroup.add(wall);
+  }
+
   addOtherPlayer(p: { id: string; x: number; y: number }) {
-    // other players rendered in red to distinguish from local player
-    this.otherPlayers[p.id] = this.add
-      .sprite(p.x, p.y, "player")
-      .setTint(0xe11d48);
+    const sprite = this.add
+      .sprite(p.x, p.y, "character")
+      .setDepth(5)
+      .setScale(1.2)
+    sprite.play("other-idle");
+    this.otherPlayers[p.id] = sprite;
   }
 
   update() {
-    const speed = 160;
+    const speed = 180;
     this.player.setVelocity(0);
 
-    if (this.cursors.left.isDown)  this.player.setVelocityX(-speed);
-    if (this.cursors.right.isDown) this.player.setVelocityX(speed);
-    if (this.cursors.up.isDown)    this.player.setVelocityY(-speed);
-    if (this.cursors.down.isDown)  this.player.setVelocityY(speed);
+    const left  = this.cursors.left.isDown  || this.wasd.left.isDown;
+    const right = this.cursors.right.isDown || this.wasd.right.isDown;
+    const up    = this.cursors.up.isDown    || this.wasd.up.isDown;
+    const down  = this.cursors.down.isDown  || this.wasd.down.isDown;
 
-    // emit position every frame
+    let moving = false;
+    let currentAnim = `idle`;
+
+    if (left) {
+      this.player.setVelocityX(-speed);
+      this.player.play("walk-left", true);
+      currentAnim = "walk-left";
+      this.lastDirection = "left";
+      moving = true;
+    } else if (right) {
+      this.player.setVelocityX(speed);
+      this.player.play("walk-right", true);
+      currentAnim = "walk-right";
+      this.lastDirection = "right";
+      moving = true;
+    }
+
+    if (up) {
+      this.player.setVelocityY(-speed);
+      this.player.play("walk-up", true);
+      currentAnim = "walk-up";
+      this.lastDirection = "up";
+      moving = true;
+    } else if (down) {
+      this.player.setVelocityY(speed);
+      this.player.play("walk-down", true);
+      currentAnim = "walk-down";
+      this.lastDirection = "down";
+      moving = true;
+    }
+
+    // diagonal normalisation
+    if ((left || right) && (up || down)) {
+      this.player.body!.velocity.normalize().scale(speed);
+    }
+
+    // idle when nothing pressed — face last direction
+    if (!moving) {
+      this.player.play("idle", true);
+      currentAnim = "idle";
+    }
+
+    // emit position + current animation so other clients can sync
     this.socket?.emit("player:move", {
       x: this.player.x,
       y: this.player.y,
+      anim: currentAnim,
     });
   }
 
-  // clean up socket on scene shutdown
   shutdown() {
     this.socket?.disconnect();
   }
@@ -107,9 +395,10 @@ export default function PhaserGame() {
       type: Phaser.AUTO,
       width: window.innerWidth,
       height: window.innerHeight,
+      backgroundColor: "#1a1a2e",
       physics: {
         default: "arcade",
-        arcade: { gravity: { x: 0, y: 0 } },
+        arcade: { gravity: { x: 0, y: 0 }, debug: false },
       },
       scene: [GameScene],
       parent: "game-container",
