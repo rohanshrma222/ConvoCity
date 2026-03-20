@@ -1,0 +1,31 @@
+{
+  "name": "@repo/auth",
+  "version": "1.0.0",
+  "description": "Shared Better Auth config for server and client",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./client": {
+      "import": "./src/auth-client.ts",
+      "default": "./src/auth-client.ts"
+    },
+    "./server": {
+      "import": "./src/auth.ts",
+      "default": "./src/auth.ts"
+    }
+  },
+  "dependencies": {
+    "@repo/db": "workspace:*",
+    "better-auth": "^1.2.7",
+    "dotenv": "^17.3.1"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^22.15.3",
+    "typescript": "^5.9.3"
+  }
+}

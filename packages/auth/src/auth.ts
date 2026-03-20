@@ -16,7 +16,11 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     },
   },
-  trustedOrigins: [process.env.BETTER_AUTH_URL || "http://localhost:3000"],
+  trustedOrigins: [
+    process.env.BETTER_AUTH_URL || "http://localhost:3002",
+    process.env.WEB_URL || "http://localhost:3000",
+  ],
 });
 
 export type Session = typeof auth.$Infer.Session;
+export type User = typeof auth.$Infer.Session.user;
