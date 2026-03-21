@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import authRouter from "./routes/auth.route.js";
+import {router} from "./routes/v1/index.js";
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -34,4 +35,4 @@ app.listen(PORT, () => {
   console.log(`🔐 Auth routes available at http://localhost:${PORT}/api/auth`);
 });
 
-
+app.use("/api/v1", router);
