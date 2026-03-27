@@ -1,9 +1,14 @@
-import { Router } from "express";
+import { Router, type IRouter } from "express";
+import authV1Router from "./auth.js";
+import avatarRouter from "./avatar.js";
+import spaceRouter from "./space.js";
+import templateRouter from "./template.js";
 
-export const router: Router = Router();
+const router: IRouter = Router();
 
-router.get("/elements", (req, res) => {
-    res.json({ message: "v1 API", status: "ok" });
-});
+router.use("/auth", authV1Router);
+router.use("/templates", templateRouter);
+router.use("/space", spaceRouter);
+router.use("/", avatarRouter);
 
- 
+export { router };

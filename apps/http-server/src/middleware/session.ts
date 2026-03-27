@@ -1,42 +1,62 @@
-import { Request, Response, NextFunction } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { auth } from "@repo/auth";
 
-export interface AuthRequest extends Request {
-  session?: typeof auth.$Infer.Session | null;
+function toHeaders(headers: Request["headers"]): Headers {
+  const normalized = new Headers();
+
+  for (const [key, value] of Object.entries(headers)) {
+    if (Array.isArray(value)) {
+      for (const entry of value) {
+        normalized.append(key, entry);
+      }
+      continue;
+    }
+
+    if (typeof value === "string") {
+      normalized.set(key, value);
+    }
+  }
+
+  return normalized;
 }
 
-/**
- * Middleware to attach the Better Auth session to req.session.
- * Usage: app.use(sessionMiddleware) or on specific routes.
- */
+function unauthorizedError() {
+  const error = new Error("Unauthorized") as Error & { statusCode?: number };
+  error.statusCode = 401;
+  return error;
+}
+
 export async function sessionMiddleware(
-  req: AuthRequest,
+  req: Request,
   _res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const session = await auth.api.getSession({
-      headers: new Headers(req.headers as Record<string, string>),
+      headers: toHeaders(req.headers),
     });
-    req.session = session;
+
+    req.authSession = session ?? null;
+    req.authUser = session?.user ?? null;
   } catch {
-    req.session = null;
+    req.authSession = null;
+    req.authUser = null;
   }
+
   next();
 }
 
-/**
- * Guard middleware — rejects unauthenticated requests with 401.
- */
 export async function requireSession(
-  req: AuthRequest,
+  req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
-  await sessionMiddleware(req, res, () => {});
-  if (!req.session) {
-    res.status(401).json({ error: "Unauthorized" });
+  await sessionMiddleware(req, res, () => undefined);
+
+  if (!req.authSession || !req.authUser) {
+    next(unauthorizedError());
     return;
   }
+
   next();
 }

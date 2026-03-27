@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -10,18 +7,19 @@ datasource db {
   provider = "postgresql"
 }
 
-// ── Better Auth models ───────────────────────────────────────────
-
 model user {
-  id            String    @id
+  id            String        @id
   name          String
-  email         String    @unique
+  email         String        @unique
   emailVerified Boolean
   image         String?
   createdAt     DateTime
   updatedAt     DateTime
   sessions      session[]
   accounts      account[]
+  ownedSpaces   Space[]       @relation("SpaceOwner")
+  memberships   SpaceMember[]
+  avatars       Avatar[]
 
   @@map("user")
 }
@@ -70,3 +68,74 @@ model verification {
   @@map("verification")
 }
 
+model Template {
+  id              String   @id @default(uuid())
+  name            String
+  previewImageUrl String
+  rooms           Json
+  createdAt       DateTime @default(now())
+  spaces          Space[]
+}
+
+model Space {
+  id         String      @id @default(uuid())
+  name       String
+  inviteCode String      @unique
+  createdAt  DateTime    @default(now())
+  ownerId    String
+  owner      user        @relation("SpaceOwner", fields: [ownerId], references: [id])
+  templateId String
+  template   Template    @relation(fields: [templateId], references: [id])
+  rooms      Room[]
+  members    SpaceMember[]
+  avatars    Avatar[]
+}
+
+model Room {
+  id      String   @id @default(uuid())
+  name    String
+  type    RoomType
+  posX    Int
+  posY    Int
+  spaceId String
+  space   Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+}
+
+model SpaceMember {
+  id       String     @id @default(uuid())
+  role     MemberRole @default(MEMBER)
+  joinedAt DateTime   @default(now())
+  spaceId  String
+  space    Space      @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  userId   String
+  user     user       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([spaceId, userId])
+}
+
+model Avatar {
+  id          String @id @default(uuid())
+  displayName String
+  skinTone    String
+  outfitColor String
+  posX        Int    @default(0)
+  posY        Int    @default(0)
+  userId      String
+  user        user   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  spaceId     String
+  space       Space  @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, spaceId])
+}
+
+enum RoomType {
+  OFFICE
+  LOUNGE
+  MEETING
+  OPEN
+}
+
+enum MemberRole {
+  OWNER
+  MEMBER
+}
