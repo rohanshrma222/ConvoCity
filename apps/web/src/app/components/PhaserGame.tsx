@@ -1,33 +1,13 @@
 "use client";
+
 import { useEffect, useRef } from "react";
 import Phaser from "phaser";
 import { io, Socket } from "socket.io-client";
-
-// ─── Map Layout ───────────────────────────────────────────────
-// 0 = floor  1 = outer wall  2 = desk  3 = meeting room wall
-const MAP: number[][] = [
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 3, 3, 3, 0, 0, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-];
+import type { MapRoom } from "./GameCanvas";
 
 const TILE = 48;
-const COLS = MAP[0]!.length;
-const ROWS = MAP.length;
+const COLS = 20;
+const ROWS = 17;
 const DECOR_DEPTH = 3.5;
 
 const COLOR = {
@@ -40,22 +20,8 @@ const COLOR = {
   meetingFloor: 0x3d3d5c,
 };
 
-// ─── RPG Maker MV Character Spritesheet Layout ────────────────
-// Standard MV format: 576×384px total
-// 12 characters per sheet (4 cols × 3 rows of characters)
-// Each character cell = 144×192px (3 walk frames × 4 directions)
-// Each individual frame = 48×48px
-//
-// We use the FIRST character (top-left cell):
-//   Down  frames: row 0, cols 1-3  (middle col = idle)
-//   Left  frames: row 1, cols 1-3
-//   Right frames: row 2, cols 1-3
-//   Up    frames: row 3, cols 1-3
-//
-// If your image is a different size, adjust CHAR_W / CHAR_H below
-
-const CHAR_FRAME_W = 48; // single frame width  — adjust if needed
-const CHAR_FRAME_H = 96; // single frame height — adjust if needed
+const CHAR_FRAME_W = 48;
+const CHAR_FRAME_H = 96;
 
 const DECOR_ASSETS = [
   "desk",
@@ -74,7 +40,7 @@ const DECOR_ASSETS = [
   "monitor",
   "coffemac",
   "chair1",
-  "keyboardmouse"
+  "keyboardmouse",
 ] as const;
 
 type DecorItem = {
@@ -110,16 +76,23 @@ const DECOR_LAYOUT: DecorItem[] = [
   { key: "monitor", tileX: 16.1, tileY: 4.2, width: TILE * 1.6, height: TILE * 1.3, depth: 4.1 },
   { key: "chair1", tileX: 1.3, tileY: 2.8, width: TILE * 1.8, height: TILE * 1.8, depth: 2.7 },
   { key: "keyboardmouse", tileX: 16.2, tileY: 4.74, width: TILE * 1.62, height: TILE * 0.6, depth: 4.1 },
-
 ];
+
+function safeSet(map: number[][], row: number, col: number, value: number) {
+  if (row < 0 || row >= ROWS || col < 0 || col >= COLS) {
+    return;
+  }
+
+  map[row]![col] = value;
+}
 
 class GameScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: {
-    up:    Phaser.Input.Keyboard.Key;
-    down:  Phaser.Input.Keyboard.Key;
-    left:  Phaser.Input.Keyboard.Key;
+    up: Phaser.Input.Keyboard.Key;
+    down: Phaser.Input.Keyboard.Key;
+    left: Phaser.Input.Keyboard.Key;
     right: Phaser.Input.Keyboard.Key;
   };
   private socket!: Socket;
@@ -131,47 +104,107 @@ class GameScene extends Phaser.Scene {
     super({ key: "GameScene" });
   }
 
+  private buildMapFromTemplate(rooms: MapRoom[]): number[][] {
+    const map: number[][] = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+
+    for (let col = 0; col < COLS; col++) {
+      map[0]![col] = 1;
+      map[ROWS - 1]![col] = 1;
+    }
+
+    for (let row = 0; row < ROWS; row++) {
+      map[row]![0] = 1;
+      map[row]![COLS - 1] = 1;
+    }
+
+    rooms.forEach((room) => {
+      if (room.type === "MEETING") {
+        for (let i = 0; i < 8; i++) {
+          safeSet(map, room.posY, room.posX + i, 3);
+        }
+
+        for (let i = 1; i < 5; i++) {
+          safeSet(map, room.posY + i, room.posX, 3);
+          safeSet(map, room.posY + i, room.posX + 7, 3);
+        }
+
+        safeSet(map, room.posY + 5, room.posX, 3);
+        safeSet(map, room.posY + 5, room.posX + 1, 3);
+        safeSet(map, room.posY + 5, room.posX + 2, 3);
+        safeSet(map, room.posY + 5, room.posX + 5, 3);
+        safeSet(map, room.posY + 5, room.posX + 6, 3);
+        safeSet(map, room.posY + 5, room.posX + 7, 3);
+      }
+
+      if (room.type === "OFFICE") {
+        safeSet(map, room.posY, room.posX, 2);
+        safeSet(map, room.posY, room.posX + 1, 2);
+        safeSet(map, room.posY + 1, room.posX, 2);
+        safeSet(map, room.posY + 1, room.posX + 1, 2);
+      }
+    });
+
+    return map;
+  }
+
+  private isMeetingFloorTile(rooms: MapRoom[], row: number, col: number): boolean {
+    return rooms.some(
+      (room) =>
+        room.type === "MEETING" &&
+        row >= room.posY + 1 &&
+        row <= room.posY + 4 &&
+        col >= room.posX + 1 &&
+        col <= room.posX + 6,
+    );
+  }
+
+  private addRoomLabels(rooms: MapRoom[]) {
+    rooms.forEach((room) => {
+      const offsetX = room.type === "MEETING" ? 4 : 1.6;
+      const offsetY = room.type === "MEETING" ? 2.8 : 0.9;
+
+      this.add
+        .text((room.posX + offsetX) * TILE, (room.posY + offsetY) * TILE, room.name, {
+          fontSize: "11px",
+          color: "#aaaacc",
+          fontFamily: "monospace",
+        })
+        .setOrigin(0.5)
+        .setDepth(3);
+    });
+  }
+
   preload() {
-    // ── load character spritesheet ──
-    // Save your Characters_MV.png to apps/web/public/assets/character.png
     this.load.spritesheet("character", "/assets/Characters.png", {
-      frameWidth:  CHAR_FRAME_W,
+      frameWidth: CHAR_FRAME_W,
       frameHeight: CHAR_FRAME_H,
     });
-    this.load.image("floor",  "/assets/tile.png");
+    this.load.image("floor", "/assets/tile.png");
     DECOR_ASSETS.forEach((asset) => {
       this.load.image(asset, `/assets/${asset}.png`);
     });
   }
 
   create() {
+    const roomId = this.game.registry.get("roomId") as string;
+    const rooms = (this.game.registry.get("mapRooms") as MapRoom[]) ?? [];
+    const map = this.buildMapFromTemplate(rooms);
     const mapW = COLS * TILE;
     const mapH = ROWS * TILE;
-    const roomId = this.game.registry.get("roomId") as string;
 
     this.wallGroup = this.physics.add.staticGroup();
 
-    // ── Draw world ───────────────────────────────────────────
     for (let row = 0; row < ROWS; row++) {
       for (let col = 0; col < COLS; col++) {
-        const x    = col * TILE;
-        const y    = row * TILE;
-        const tile = MAP[row]![col]!;
-
-        // checkerboard floor
+        const x = col * TILE;
+        const y = row * TILE;
+        const tile = map[row]![col]!;
         const isAlt = (row + col) % 2 === 0;
-        this.add
-          .image(x, y, "floor")
-          .setOrigin(0)
-          .setDepth(0)
-          .setDisplaySize(TILE, TILE)  // ← FORCE 48×48 regardless of source size
-          .setAlpha(isAlt ? 1 : 0.85); // ← checkerboard effect via opacity
 
-        // meeting room floor tint
-        if (row >= 7 && row <= 10 && col >= 5 && col <= 10) {
-          this.add
-            .rectangle(x, y, TILE, TILE, COLOR.meetingFloor)
-            .setOrigin(0).setDepth(0.5);
+        this.add.image(x, y, "floor").setOrigin(0).setDepth(0).setDisplaySize(TILE, TILE).setAlpha(isAlt ? 1 : 0.85);
+
+        if (this.isMeetingFloorTile(rooms, row, col)) {
+          this.add.rectangle(x, y, TILE, TILE, COLOR.meetingFloor).setOrigin(0).setDepth(0.5);
         }
 
         if (tile === 1) {
@@ -192,143 +225,93 @@ class GameScene extends Phaser.Scene {
       }
     }
 
-    // ── Room labels ──────────────────────────────────────────
     this.addDecor();
+    this.addRoomLabels(rooms);
 
-    this.add.text(7.5 * TILE, 8.8 * TILE, "Meeting Room", {
-      fontSize: "11px", color: "#aaaacc", fontFamily: "monospace",
-    }).setOrigin(0.5).setDepth(3);
-
-    this.add.text(15 * TILE, 2.5 * TILE, "Open Office", {
-      fontSize: "11px", color: "#888899", fontFamily: "monospace",
-    }).setOrigin(0.5).setDepth(3);
-
-    // ── Register animations ───────────────────────────────────
-    // RPG Maker MV standard layout:
-    // Each direction has 3 frames: left-step, idle, right-step
-    // Row 0 = down, Row 1 = left, Row 2 = right, Row 3 = up
-    // Frames per row = depends on image width ÷ 48
-    // For a 576px wide sheet: 12 frames per row
-    // First character occupies cols 0-2 of each row
-    
-    //Character 1
     this.anims.create({
       key: "walk-down",
-      frames: this.anims.generateFrameNumbers("character", {
-        frames: [1, 0, 1, 2], // idle, left-step, idle, right-step
-      }),
+      frames: this.anims.generateFrameNumbers("character", { frames: [1, 0, 1, 2] }),
       frameRate: 8,
       repeat: -1,
     });
-
     this.anims.create({
       key: "walk-left",
-      frames: this.anims.generateFrameNumbers("character", {
-        frames: [13, 12, 13, 14], // row 1 = left direction
-      }),
+      frames: this.anims.generateFrameNumbers("character", { frames: [13, 12, 13, 14] }),
       frameRate: 8,
       repeat: -1,
     });
-
     this.anims.create({
       key: "walk-right",
-      frames: this.anims.generateFrameNumbers("character", {
-        frames: [25, 24, 25, 26], // row 2 = right direction
-      }),
+      frames: this.anims.generateFrameNumbers("character", { frames: [25, 24, 25, 26] }),
       frameRate: 8,
       repeat: -1,
     });
-
     this.anims.create({
       key: "walk-up",
-      frames: this.anims.generateFrameNumbers("character", {
-        frames: [37, 36, 37, 38], // row 3 = up direction
-      }),
+      frames: this.anims.generateFrameNumbers("character", { frames: [37, 36, 37, 38] }),
       frameRate: 8,
       repeat: -1,
     });
-
-    // idle — just the centre frame facing down
     this.anims.create({
       key: "idle",
       frames: [{ key: "character", frame: 1 }],
       frameRate: 1,
       repeat: 0,
     });
-
-    // Character 2 animations (offset by 3 frames)
     this.anims.create({
       key: "other-walk-down",
-      frames: this.anims.generateFrameNumbers("character", {
-        frames: [4, 3, 4, 5],
-      }),
+      frames: this.anims.generateFrameNumbers("character", { frames: [4, 3, 4, 5] }),
       frameRate: 8,
       repeat: -1,
     });
-
     this.anims.create({
       key: "other-walk-left",
-      frames: this.anims.generateFrameNumbers("character", {
-        frames: [16, 15, 16, 17],
-      }),
+      frames: this.anims.generateFrameNumbers("character", { frames: [16, 15, 16, 17] }),
       frameRate: 8,
       repeat: -1,
     });
-
     this.anims.create({
       key: "other-walk-right",
-      frames: this.anims.generateFrameNumbers("character", {
-        frames: [28, 27, 28, 29],
-      }),
+      frames: this.anims.generateFrameNumbers("character", { frames: [28, 27, 28, 29] }),
       frameRate: 8,
       repeat: -1,
     });
-
     this.anims.create({
       key: "other-walk-up",
-      frames: this.anims.generateFrameNumbers("character", {
-        frames: [40, 39, 40, 41],
-      }),
+      frames: this.anims.generateFrameNumbers("character", { frames: [40, 39, 40, 41] }),
       frameRate: 8,
       repeat: -1,
     });
-
     this.anims.create({
       key: "other-idle",
-      frames: [{ key: "character", frame: 4 }], // frame 4 = char 2 idle facing down
+      frames: [{ key: "character", frame: 4 }],
       frameRate: 1,
       repeat: 0,
     });
 
-    // ── Player ───────────────────────────────────────────────
     this.player = this.physics.add.sprite(9 * TILE, 5 * TILE, "character");
     this.player.setCollideWorldBounds(true);
     this.player.setDepth(2.8);
-    this.player.setScale(1.2); // scale up slightly to match 48px tile size
+    this.player.setScale(1.2);
     this.player.play("idle");
-
-    // tighter physics body (character is smaller than the full frame)
     this.player.setSize(24, 40);
     this.player.setOffset(12, 12);
 
     this.physics.add.collider(this.player, this.wallGroup);
 
-    // ── Input ────────────────────────────────────────────────
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.wasd = {
-      up:    this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W),
-      down:  this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S),
-      left:  this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A),
+      up: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W),
+      down: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S),
+      left: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A),
       right: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D),
     };
 
-    // ── Camera ───────────────────────────────────────────────
     this.cameras.main.startFollow(this.player);
     this.cameras.main.setBounds(0, 0, mapW, mapH);
     this.cameras.main.setZoom(1.4);
     this.physics.world.setBounds(0, 0, mapW, mapH);
 
-    // ── Socket.io ────────────────────────────────────────────
     this.socket = io("http://localhost:3001");
 
     this.socket.emit("player:join", {
@@ -338,31 +321,27 @@ class GameScene extends Phaser.Scene {
       roomId,
     });
 
-    this.socket.on("players:init", (players: any[]) => {
-      players.forEach((p) => {
-        if (p.id !== this.socket.id) this.addOtherPlayer(p);
+    this.socket.on("players:init", (players: Array<{ id: string; x: number; y: number }>) => {
+      players.forEach((player) => {
+        if (player.id !== this.socket.id) {
+          this.addOtherPlayer(player);
+        }
       });
     });
 
-    this.socket.on(
-      "player:joined",
-      (p: { id: string; x: number; y: number }) => this.addOtherPlayer(p)
-    );
+    this.socket.on("player:joined", (player: { id: string; x: number; y: number }) => {
+      this.addOtherPlayer(player);
+    });
 
-    this.socket.on(
-      "player:moved",
-      ({ id, x, y, anim }: { id: string; x: number; y: number; anim: string }) => {
-        const other = this.otherPlayers[id];
-        if (other) {
-          other.setPosition(x, y);
-          // map local anim key → other player anim key
-          const otherAnim = anim === "idle"
-            ? "other-idle"
-            : anim.replace("walk-", "other-walk-");
-          other.play(otherAnim, true);
-        }
+    this.socket.on("player:moved", ({ id, x, y, anim }: { id: string; x: number; y: number; anim: string }) => {
+      const other = this.otherPlayers[id];
+
+      if (other) {
+        other.setPosition(x, y);
+        const otherAnim = anim === "idle" ? "other-idle" : anim.replace("walk-", "other-walk-");
+        other.play(otherAnim, true);
       }
-    );
+    });
 
     this.socket.on("player:left", (id: string) => {
       this.otherPlayers[id]?.destroy();
@@ -381,33 +360,28 @@ class GameScene extends Phaser.Scene {
   }
 
   private addWall(x: number, y: number) {
-    const wall = this.add.rectangle(
-      x + TILE / 2, y + TILE / 2, TILE, TILE, 0x000000, 0
-    );
+    const wall = this.add.rectangle(x + TILE / 2, y + TILE / 2, TILE, TILE, 0x000000, 0);
     this.physics.add.existing(wall, true);
     this.wallGroup.add(wall);
   }
 
-  addOtherPlayer(p: { id: string; x: number; y: number }) {
-    const sprite = this.add
-      .sprite(p.x, p.y, "character")
-      .setDepth(5)
-      .setScale(1.2)
+  addOtherPlayer(player: { id: string; x: number; y: number }) {
+    const sprite = this.add.sprite(player.x, player.y, "character").setDepth(5).setScale(1.2);
     sprite.play("other-idle");
-    this.otherPlayers[p.id] = sprite;
+    this.otherPlayers[player.id] = sprite;
   }
 
   update() {
     const speed = 180;
     this.player.setVelocity(0);
 
-    const left  = this.cursors.left.isDown  || this.wasd.left.isDown;
+    const left = this.cursors.left.isDown || this.wasd.left.isDown;
     const right = this.cursors.right.isDown || this.wasd.right.isDown;
-    const up    = this.cursors.up.isDown    || this.wasd.up.isDown;
-    const down  = this.cursors.down.isDown  || this.wasd.down.isDown;
+    const up = this.cursors.up.isDown || this.wasd.up.isDown;
+    const down = this.cursors.down.isDown || this.wasd.down.isDown;
 
     let moving = false;
-    let currentAnim = `idle`;
+    let currentAnim = "idle";
 
     if (left) {
       this.player.setVelocityX(-speed);
@@ -437,18 +411,15 @@ class GameScene extends Phaser.Scene {
       moving = true;
     }
 
-    // diagonal normalisation
     if ((left || right) && (up || down)) {
       this.player.body!.velocity.normalize().scale(speed);
     }
 
-    // idle when nothing pressed — face last direction
     if (!moving) {
       this.player.play("idle", true);
       currentAnim = "idle";
     }
 
-    // emit position + current animation so other clients can sync
     this.socket?.emit("player:move", {
       x: this.player.x,
       y: this.player.y,
@@ -463,14 +434,16 @@ class GameScene extends Phaser.Scene {
 
 interface PhaserGameProps {
   roomId: string;
+  mapData: {
+    rooms: MapRoom[];
+  };
 }
 
-export default function PhaserGame({ roomId }: PhaserGameProps) {
+export default function PhaserGame({ roomId, mapData }: PhaserGameProps) {
   const gameRef = useRef<Phaser.Game | null>(null);
 
   useEffect(() => {
-    if (gameRef.current) return;
-
+    gameRef.current?.destroy(true);
     gameRef.current = new Phaser.Game({
       type: Phaser.AUTO,
       width: window.innerWidth,
@@ -485,6 +458,7 @@ export default function PhaserGame({ roomId }: PhaserGameProps) {
       callbacks: {
         preBoot: (game) => {
           game.registry.set("roomId", roomId);
+          game.registry.set("mapRooms", mapData.rooms);
         },
       },
     });
@@ -493,9 +467,7 @@ export default function PhaserGame({ roomId }: PhaserGameProps) {
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
-  }, [roomId]);
+  }, [mapData, roomId]);
 
-  return <div id="game-container" className="w-full h-screen" />;
+  return <div id="game-container" className="h-screen w-full" />;
 }
-
-
