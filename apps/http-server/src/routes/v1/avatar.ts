@@ -4,6 +4,6 @@ import { requireSession } from "../../middleware/session.js";
 
 const avatarRouter: IRouter = Router();
 
-avatarRouter.post("/create/avatar", requireSession, createAvatar);
+avatarRouter.post("/avatar", requireSession, createAvatar);
 
 export default avatarRouter;

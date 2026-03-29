@@ -9,8 +9,12 @@
       "types": "./src/index.ts"
     }
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "db:seed": "prisma db seed"
   },
   "keywords": [],
   "author": "",
@@ -30,4 +34,3 @@
     "pg": "^8.20.0"
   }
 }
-

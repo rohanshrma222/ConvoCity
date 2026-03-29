@@ -1,4 +1,4 @@
-import { z } from "zod/v4/index.js";
+import { z } from "zod";
 
 export const createAvatarSchema = z.object({
   spaceId: z.uuid(),
