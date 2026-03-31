@@ -47,7 +47,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
     try {
       await signIn.social({
         provider: "google",
-        callbackURL: "/dashboard",
+        callbackURL: `${window.location.origin}/v1/space`,
       });
     } catch {
       setError("Google sign-in failed. Please try again.");
@@ -65,11 +65,11 @@ export default function AuthForm({ mode }: AuthFormProps) {
       if (isSignup) {
         const { error: err } = await signUp.email({ name, email, password });
         if (err) { setError(err.message ?? "Sign-up failed."); return; }
-        router.push("/dashboard");
+        router.push("/v1/space");
       } else {
         const { error: err } = await signIn.email({ email, password });
         if (err) { setError(err.message ?? "Invalid email or password."); return; }
-        router.push("/dashboard");
+        router.push("/v1/space");
       }
     } finally {
       setLoading(false);

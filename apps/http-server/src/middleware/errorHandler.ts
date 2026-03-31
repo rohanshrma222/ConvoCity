@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { ZodError } from "zod/v4/index.js";
+import { ZodError } from "zod";
 
 type ErrorWithStatus = Error & {
   code?: string;

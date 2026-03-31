@@ -1,4 +1,4 @@
-declare module "zod/v4/index.js" {
+declare module "zod" {
   export const z: any;
 
   export class ZodError extends Error {
