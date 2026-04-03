@@ -22,7 +22,7 @@ spaceRouter.get("/:id", getSpaceById);
 spaceRouter.patch("/:id", updateSpace);
 spaceRouter.delete("/:id", deleteSpace);
 spaceRouter.get("/:id/members", listMembers);
-spaceRouter.get("/:id/invite-code", regenerateInviteCode);
+spaceRouter.post("/:id/invite-code/regenerate", regenerateInviteCode);
 spaceRouter.patch("/:id/avatar", updateAvatarPosition);
 spaceRouter.get("/:id/avatars", getSpaceAvatars);
 

@@ -10,8 +10,7 @@ import { Key } from "@/components/animate-ui/icons/key";
 import { Search } from "@/components/animate-ui/icons/search";
 import { Clock } from "@/components/animate-ui/icons/clock";
 import { Layers } from "@/components/animate-ui/icons/layers";
-
-/* ─────────────────────────── types ─────────────────────────── */
+import { AnimateIcon } from "@/components/animate-ui/icons/icon";
 
 type SpaceSummary = {
   id: string;
@@ -23,8 +22,6 @@ type SpaceSummary = {
   _count: { members: number };
 };
 
-/* ─────────────────────────── helpers ───────────────────────── */
-
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
@@ -32,8 +29,6 @@ function formatDate(value: string) {
     year: "numeric",
   }).format(new Date(value));
 }
-
-/* ─── banner slides (static mock — replace with real data) ─── */
 
 const BANNERS = [
   {
@@ -60,24 +55,12 @@ const BANNERS = [
   },
 ];
 
-/* ─── new spaces cards ─── */
-
-const NEW_SPACE_CARDS = [
-  { id: "ns1", label: "Study Room", bg: "#a8e6a3", icon: "📚", iconBg: "#5db85a" },
-  { id: "ns2", label: "Chill Lounge", bg: "#fde68a", icon: "🛋️", iconBg: "#d97706" },
-];
-
-/* ─────────────────────────── sub-components ────────────────── */
-
 function NavBar() {
   return (
-    <header style={{ background: "rgba(255,255,255,0.9)", backdropFilter: "blur(18px)", borderBottom: "1px solid #e6e2f4", position: "sticky", top: 0, zIndex: 40 }}>
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: "linear-gradient(90deg,#2a0e5c 0%,#4d2db7 50%,#2a0e5c 100%)" }} />
-      <div style={{ maxWidth: 1460, margin: "0 auto", padding: "0 24px", height: 56, display: "flex", alignItems: "center" }}>
-        {/* Logo */}
-        <span style={{ fontWeight: 700, fontSize: 18, color: "#2d1b69", letterSpacing: "-0.5px", fontFamily: "inherit" }}>
-          ConvoCity
-        </span>
+    <header className="sticky top-0 z-40 border-b border-[#e6e2f4] bg-white/90 backdrop-blur-[18px]">
+      <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#2a0e5c_0%,#4d2db7_50%,#2a0e5c_100%)]" />
+      <div className="mx-auto flex h-14 max-w-[1460px] items-center px-6">
+        <span className="text-lg font-bold tracking-[-0.5px] text-[#2d1b69]">ConvoCity</span>
       </div>
     </header>
   );
@@ -89,13 +72,14 @@ function BannerCarousel() {
 
   useEffect(() => {
     timerRef.current = setInterval(() => setActive((p) => (p + 1) % BANNERS.length), 4000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, []);
 
   return (
-    <div style={{ position: "relative", width: "100%", marginBottom: 28 }}>
-      {/* Slides row */}
-      <div style={{ display: "flex", gap: 10, overflow: "hidden" }}>
+    <div className="relative mb-7 w-full">
+      <div className="flex gap-2.5 overflow-hidden">
         {BANNERS.map((b, i) => {
           const isActive = i === active;
           const isPrev = i === (active - 1 + BANNERS.length) % BANNERS.length;
@@ -107,47 +91,24 @@ function BannerCarousel() {
             <div
               key={b.id}
               onClick={() => setActive(i)}
+              className="relative h-[210px] min-w-0 cursor-pointer overflow-hidden rounded-[18px]"
               style={{
                 flex: isActive ? "2 0 0" : "1 0 0",
-                height: 210,
-                borderRadius: 18,
                 background: b.gradient,
-                cursor: "pointer",
                 transition: "flex 0.4s cubic-bezier(0.23,1,0.32,1), opacity 0.3s",
                 opacity: isActive ? 1 : 0.72,
-                position: "relative",
-                overflow: "hidden",
-                minWidth: 0,
               }}
             >
-              {/* Tag badge */}
-              <span style={{
-                position: "absolute",
-                top: 14,
-                left: 14,
-                background: "rgba(255,255,255,0.18)",
-                backdropFilter: "blur(6px)",
-                color: b.dark ? "#3a2a10" : "#fff",
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: "0.12em",
-                padding: "4px 10px",
-                borderRadius: 20,
-              }}>
+              <span
+                className="absolute left-3.5 top-3.5 rounded-[20px] bg-white/18 px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] backdrop-blur-[6px]"
+                style={{ color: b.dark ? "#3a2a10" : "#fff" }}
+              >
                 {b.tag}
               </span>
-              {/* Title */}
-              <div style={{
-                position: "absolute",
-                bottom: 18,
-                left: 16,
-                right: 16,
-                color: b.dark ? "#2a1a05" : "#fff",
-                fontSize: 18,
-                fontWeight: 700,
-                lineHeight: 1.25,
-                textShadow: b.dark ? "none" : "0 2px 12px rgba(0,0,0,0.3)",
-              }}>
+              <div
+                className="absolute bottom-[18px] left-4 right-4 text-lg font-bold leading-[1.25]"
+                style={{ color: b.dark ? "#2a1a05" : "#fff", textShadow: b.dark ? "none" : "0 2px 12px rgba(0,0,0,0.3)" }}
+              >
                 {b.title}
               </div>
             </div>
@@ -155,22 +116,13 @@ function BannerCarousel() {
         })}
       </div>
 
-      {/* Dots */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 12 }}>
+      <div className="mt-3 flex justify-center gap-1.5">
         {BANNERS.map((_, i) => (
           <button
             key={i}
             onClick={() => setActive(i)}
-            style={{
-              width: i === active ? 24 : 8,
-              height: 8,
-              borderRadius: 4,
-              background: i === active ? "#531f96" : "#d0c8f0",
-              border: "none",
-              cursor: "pointer",
-              transition: "width 0.3s, background 0.3s",
-              padding: 0,
-            }}
+            className="h-2 rounded-[4px] border-none p-0 transition-[width,background] duration-300"
+            style={{ width: i === active ? 24 : 8, background: i === active ? "#531f96" : "#d0c8f0" }}
           />
         ))}
       </div>
@@ -178,7 +130,13 @@ function BannerCarousel() {
   );
 }
 
-function SpaceCard({ space, isOwner, onEnter, onDelete, isDeleting }: {
+function SpaceCard({
+  space,
+  isOwner,
+  onEnter,
+  onDelete,
+  isDeleting,
+}: {
   space: SpaceSummary;
   isOwner: boolean;
   onEnter: () => void;
@@ -190,48 +148,27 @@ function SpaceCard({ space, isOwner, onEnter, onDelete, isDeleting }: {
 
   return (
     <div
-      style={{
-        background: bg,
-        borderRadius: 20,
-        padding: 20,
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-        cursor: "pointer",
-        transition: "transform 0.18s, box-shadow 0.18s",
-        minHeight: 140,
-        position: "relative",
-      }}
-      onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 12px 32px rgba(0,0,0,0.12)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
+      className="relative flex min-h-[140px] cursor-pointer flex-col gap-3 rounded-[20px] p-5 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-[3px] hover:shadow-[0_12px_32px_rgba(0,0,0,0.12)]"
+      style={{ background: bg }}
       onClick={onEnter}
     >
-      {/* Icon placeholder */}
-      <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(0,0,0,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>
-        🏠
-      </div>
+      <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-black/12 text-[22px]">🏠</div>
       <div>
-        <p style={{ fontWeight: 700, fontSize: 15, color: "#1a1a2e", marginBottom: 2 }}>{space.name}</p>
-        <p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)" }}>{space._count.members} member{space._count.members !== 1 ? "s" : ""} · {formatDate(space.createdAt)}</p>
+        <p className="mb-0.5 text-[15px] font-bold text-[#1a1a2e]">{space.name}</p>
+        <p className="text-xs text-black/50">
+          {space._count.members} member{space._count.members !== 1 ? "s" : ""} · {formatDate(space.createdAt)}
+        </p>
       </div>
       {isOwner && (
         <button
-          onClick={(e) => { e.stopPropagation(); onDelete(); }}
-          disabled={isDeleting}
-          style={{
-            position: "absolute",
-            top: 12,
-            right: 12,
-            background: "rgba(0,0,0,0.1)",
-            border: "none",
-            borderRadius: 8,
-            padding: "4px 8px",
-            fontSize: 11,
-            cursor: "pointer",
-            color: "#333",
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
           }}
+          disabled={isDeleting}
+          className="absolute right-3 top-3 rounded-lg bg-black/10 px-2 py-1 text-[11px] text-[#333] transition-colors duration-150 ease-out hover:bg-black/15 disabled:cursor-not-allowed"
         >
-          {isDeleting ? "…" : "✕"}
+          {isDeleting ? "..." : "✕"}
         </button>
       )}
     </div>
@@ -240,51 +177,19 @@ function SpaceCard({ space, isOwner, onEnter, onDelete, isDeleting }: {
 
 function EmptyState({ onExplore }: { onExplore: () => void }) {
   return (
-    <div style={{
-      background: "#f6f5ff",
-      borderRadius: 24,
-      padding: "48px 24px",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      gap: 16,
-      textAlign: "center",
-    }}>
-      {/* Mascot illustration */}
+    <div className="flex flex-col items-center gap-4 rounded-3xl bg-[#f6f5ff] px-6 py-12 text-center">
       <img
         src="/assets/char1.png"
         alt="ConvoCity mascot"
-        style={{
-          width: 120,
-          height: 120,
-          objectFit: "contain",
-          marginBottom: 8,
-          imageRendering: "pixelated",
-        }}
+        className="mb-2 h-[120px] w-[120px] object-contain [image-rendering:pixelated]"
       />
-      <h2 style={{ fontSize: 22, fontWeight: 700, color: "#6c3ffb", margin: 0 }}>
-        Quiet in the Orbit
-      </h2>
-      <p style={{ fontSize: 14, color: "#888", maxWidth: 320, lineHeight: 1.7, margin: 0 }}>
+      <h2 className="text-[22px] font-bold text-[#6c3ffb]">Quiet in the Orbit</h2>
+      <p className="max-w-[320px] text-sm leading-[1.7] text-[#888]">
         You haven&apos;t visited any Spaces. Create or enter a Space to start your journey.
       </p>
       <button
         onClick={onExplore}
-        style={{
-          background: "#531f96",
-          color: "#fff",
-          border: "none",
-          borderRadius: 24,
-          padding: "14px 36px",
-          fontWeight: 600,
-          fontSize: 15,
-          cursor: "pointer",
-          marginTop: 8,
-          boxShadow: "0 8px 30px rgba(83,31,150,0.28)",
-          transition: "background 0.15s, box-shadow 0.15s",
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.background = "#431482"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = "#531f96"; }}
+        className="mt-2 rounded-3xl bg-[#531f96] px-9 py-3.5 text-[15px] font-semibold text-white shadow-[0_8px_30px_rgba(83,31,150,0.28)] transition-colors duration-150 ease-out hover:bg-[#431482]"
       >
         Start Exploring
       </button>
@@ -294,93 +199,19 @@ function EmptyState({ onExplore }: { onExplore: () => void }) {
 
 function SkeletonCard() {
   return (
-    <div style={{ background: "#f0eeff", borderRadius: 20, padding: 20, minHeight: 140, animation: "pulse 1.6s ease-in-out infinite" }}>
-      <div style={{ width: 44, height: 44, borderRadius: 14, background: "#d8d0f8", marginBottom: 12 }} />
-      <div style={{ height: 14, width: "60%", borderRadius: 6, background: "#d8d0f8", marginBottom: 8 }} />
-      <div style={{ height: 11, width: "40%", borderRadius: 6, background: "#e2dcfc" }} />
+    <div className="min-h-[140px] rounded-[20px] bg-[#f0eeff] p-5 [animation:pulse_1.6s_ease-in-out_infinite]">
+      <div className="mb-3 h-11 w-11 rounded-[14px] bg-[#d8d0f8]" />
+      <div className="mb-2 h-[14px] w-[60%] rounded-md bg-[#d8d0f8]" />
+      <div className="h-[11px] w-[40%] rounded-md bg-[#e2dcfc]" />
     </div>
   );
 }
-
-// function NewSpacesSection() {
-//   return (
-//     <section style={{ maxWidth: 960, margin: "32px auto 0", padding: "0 24px 48px" }}>
-//       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20, alignItems: "start" }}>
-//         {/* Left info block */}
-//         <div>
-//           <h3 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", marginBottom: 6 }}>New Spaces</h3>
-//           <p style={{ fontSize: 14, color: "#777", lineHeight: 1.6, marginBottom: 16 }}>
-//             Check out what&apos;s new in the ConvoCity ecosystem this week.
-//           </p>
-//           {/* Stacked avatars */}
-//           <div style={{ display: "flex", alignItems: "center" }}>
-//             {[5, 10, 20, 30].map((n, i) => (
-//               <div
-//                 key={n}
-//                 style={{
-//                   width: 32,
-//                   height: 32,
-//                   borderRadius: "50%",
-//                   border: "2px solid #fff",
-//                   marginLeft: i === 0 ? 0 : -8,
-//                   background: `#c7b8f5`,
-//                   // backgroundImage: `url(https://i.pravatar.cc/32?img=${n})`,
-//                   backgroundSize: "cover",
-//                   zIndex: 4 - i,
-//                   position: "relative",
-//                 }}
-//               />
-//             ))}
-//             <span style={{ fontSize: 12, color: "#888", marginLeft: 6 }}>+12</span>
-//           </div>
-//         </div>
-
-//         {/* New space cards */}
-//         {NEW_SPACE_CARDS.map((card) => (
-//           <div
-//             key={card.id}
-//             style={{
-//               background: card.bg,
-//               borderRadius: 24,
-//               padding: "28px 20px 24px",
-//               display: "flex",
-//               flexDirection: "column",
-//               alignItems: "center",
-//               gap: 16,
-//               cursor: "pointer",
-//               transition: "transform 0.18s, box-shadow 0.18s",
-//               boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-//             }}
-//             onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 10px 28px rgba(0,0,0,0.12)"; }}
-//             onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.06)"; }}
-//           >
-//             <div style={{
-//               width: 52,
-//               height: 52,
-//               borderRadius: 16,
-//               background: "rgba(0,0,0,0.12)",
-//               display: "flex",
-//               alignItems: "center",
-//               justifyContent: "center",
-//               fontSize: 26,
-//             }}>
-//               {card.icon}
-//             </div>
-//             <span style={{ fontWeight: 600, fontSize: 15, color: "#1a1a2e" }}>{card.label}</span>
-//           </div>
-//         ))}
-//       </div>
-//     </section>
-//   );
-// }
-
-/* ─────────────────────────── main page ─────────────────────── */
 
 export default function SpaceDashboardPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { user, loading: authLoading, logout } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const [spaces, setSpaces] = useState<SpaceSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -393,7 +224,6 @@ export default function SpaceDashboardPage() {
   const [routePending, startRouteTransition] = useTransition();
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-  /* load spaces */
   useEffect(() => {
     if (authLoading || !user) return;
     let active = true;
@@ -410,10 +240,11 @@ export default function SpaceDashboardPage() {
     }
 
     loadSpaces();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [authLoading, toast, user]);
 
-  /* invite code from query */
   useEffect(() => {
     const code = searchParams.get("inviteCode");
     if (!code) return;
@@ -478,161 +309,105 @@ export default function SpaceDashboardPage() {
         * { box-sizing: border-box; }
       `}</style>
 
-      <main style={{ minHeight: "100vh", background: "#f4f5f9", fontFamily: "'Inter', system-ui, sans-serif", color: "#1a1a2e", position: "relative", overflow: "hidden" }}>
-        <div aria-hidden="true" style={{ pointerEvents: "none", position: "absolute", inset: 0 }}>
-          <div style={{ position: "absolute", top: 76, left: "-10%", width: 320, height: 320, borderRadius: "50%", background: "rgba(203,184,255,0.35)", filter: "blur(72px)" }} />
-          <div style={{ position: "absolute", top: 120, right: "-8%", width: 380, height: 380, borderRadius: "50%", background: "rgba(216,204,255,0.45)", filter: "blur(88px)" }} />
+      <main className="relative min-h-screen overflow-hidden bg-[#f4f5f9] text-[#1a1a2e]">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <div className="absolute left-[-10%] top-[76px] h-80 w-80 rounded-full bg-[rgba(203,184,255,0.35)] blur-[72px]" />
+          <div className="absolute right-[-8%] top-[120px] h-[380px] w-[380px] rounded-full bg-[rgba(216,204,255,0.45)] blur-[88px]" />
         </div>
-        {/* ── Navigation ─────────────────────────────────────── */}
+
         <NavBar />
 
-        {/* ── Hero Banner Carousel — full width ───────────────── */}
-        <div style={{ padding: "24px 24px 0", position: "relative", zIndex: 1 }}>
+        <div className="relative z-1 px-6 pt-6">
           <BannerCarousel />
         </div>
 
-        {/* ── Content area (tabs + grid) ──────────────────────── */}
-        <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px", position: "relative", zIndex: 1 }}>
-
-          {/* ── Tab bar & controls ─────────────────────────────── */}
-          <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginBottom: 20, background: "rgba(255,255,255,0.68)", border: "1px solid rgba(255,255,255,0.72)", boxShadow: "0 18px 48px rgba(83,31,150,0.08)", backdropFilter: "blur(16px)", borderRadius: 28, padding: 16 }}>
-            {/* Tabs */}
-            <div style={{ display: "flex", gap: 4 }}>
+        <div className="relative z-1 mx-auto max-w-[960px] px-6">
+          <div className="mb-5 flex flex-wrap items-center gap-4 rounded-[28px] border border-white/72 bg-white/68 p-4 shadow-[0_18px_48px_rgba(83,31,150,0.08)] backdrop-blur-[16px]">
+            <div className="flex gap-1">
               {(["recent", "myspaces"] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: "8px 12px",
-                    fontSize: 14,
-                    fontWeight: activeTab === tab ? 600 : 400,
-                    color: activeTab === tab ? "#531f96" : "#666",
-                    borderBottom: activeTab === tab ? "2px solid #531f96" : "2px solid transparent",
-                    transition: "color 0.15s, border-color 0.15s",
-                  }}
+                  className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm transition-colors duration-150 ease-out ${
+                    activeTab === tab
+                      ? "border-[#531f96] font-semibold text-[#531f96]"
+                      : "border-transparent font-normal text-[#666]"
+                  }`}
                 >
                   {tab === "recent" ? (
-                    <><Clock animateOnHover size={14} strokeWidth={2.1} /> Recent</>
+                    <>
+                      <AnimateIcon animateOnHover asChild>
+                        <button className="flex items-center justify-center gap-1.5">
+                          <Clock size={14} strokeWidth={2.1} />
+                          <span>Recent</span>
+                        </button>
+                      </AnimateIcon>
+                    </>
                   ) : (
-                    <><Layers animateOnHover size={14} strokeWidth={2.1} /> My Spaces</>
+                    <>
+                      <AnimateIcon animateOnHover asChild>
+                        <button className="flex items-center justify-center gap-1.5">
+                          <Layers size={14} strokeWidth={2.1} />
+                          <span>My Spaces</span>
+                        </button>
+                      </AnimateIcon>
+                    </>
                   )}
                 </button>
               ))}
             </div>
-
-            {/* Search */}
-            <div style={{ flex: 1, minWidth: 160, maxWidth: 320, position: "relative" }}>
-              <div
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  searchInputRef.current?.focus();
-                }}
-                style={{
-                  position: "absolute",
-                  left: 12,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  color: "#8f88a8",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  pointerEvents: "auto",
-                  zIndex: 1,
-                  cursor: "text",
-                }}
-              >
-                <Search animateOnHover size={14} strokeWidth={2.1} />
+            <AnimateIcon animateOnHover="wiggle">
+              <div className="relative min-w-[160px] max-w-[320px] flex-1">
+                <div
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    searchInputRef.current?.focus();
+                  }}
+                  className="absolute left-3 top-1/2 z-1 flex -translate-y-1/2 cursor-text items-center justify-center text-[#8f88a8]"
+                >
+                  <Search size={14} strokeWidth={2.1} />
+                </div>
+                <input
+                  ref={searchInputRef}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search spaces"
+                  className="w-full rounded-[22px] border-[1.5px] border-[#e0dcf8] bg-white px-3 py-[9px] pl-[38px] text-sm text-[#333] outline-none transition-colors duration-150 ease-out focus:border-[#531f96]"
+                />
               </div>
-              <input
-                ref={searchInputRef}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search spaces"
-                style={{
-                  width: "100%",
-                  padding: "9px 12px 9px 38px",
-                  borderRadius: 22,
-                  border: "1.5px solid #e0dcf8",
-                  background: "#fff",
-                  fontSize: 14,
-                  color: "#333",
-                  outline: "none",
-                  transition: "border-color 0.15s",
-                }}
-                onFocus={(e) => (e.target.style.borderColor = "#531f96")}
-                onBlur={(e) => (e.target.style.borderColor = "#e0dcf8")}
-              />
-            </div>
-
-            {/* Action buttons */}
-            <div style={{ display: "flex", gap: 10, marginLeft: "auto" }}>
+            </AnimateIcon>
+            <div className="ml-auto flex gap-2.5">
+               <AnimateIcon animateOnHover="wiggle">
               <button
                 onClick={() => setJoinOpen(true)}
                 disabled={isBusy}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "9px 18px",
-                  borderRadius: 22,
-                  border: "1.5px solid #e0dcf8",
-                  background: "#fff",
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: "#444",
-                  cursor: "pointer",
-                  transition: "border-color 0.15s",
-                  whiteSpace: "nowrap",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#531f96")}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e0dcf8")}
+                className="group flex items-center gap-1.5 whitespace-nowrap rounded-[22px] border-[1.5px] border-[#e0dcf8] bg-white px-[18px] py-[9px] text-sm font-medium text-[#444] transition-colors duration-150 ease-out hover:border-[#531f96] disabled:cursor-not-allowed"
               >
-                <Key animateOnHover size={14} strokeWidth={2.1} />
+                <Key size={14} strokeWidth={2.1} />
                 <span>Enter with Code</span>
               </button>
+              </AnimateIcon>
               <button
                 onClick={() => navigate("/v1/create")}
                 disabled={isBusy}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "9px 18px",
-                  borderRadius: 22,
-                  border: "none",
-                  background: "#531f96",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: "#fff",
-                  cursor: "pointer",
-                  transition: "background 0.15s",
-                  whiteSpace: "nowrap",
-                  boxShadow: "0 10px 28px rgba(83,31,150,0.26)",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#431482")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "#531f96")}
+                className="whitespace-nowrap rounded-[22px] bg-[#7042b3] px-[18px] py-[9px] text-sm font-semibold text-white shadow-[0_10px_28px_rgba(83,31,150,0.26)] transition-colors duration-150 ease-out hover:bg-[#6434a6] disabled:cursor-not-allowed"
               >
                 + Create Space
               </button>
             </div>
           </div>
 
-          {/* ── Spaces grid / empty / loading ─────────────────── */}
-          <div style={{ background: "rgba(255,255,255,0.78)", borderRadius: 32, padding: "24px", marginBottom: 0, minHeight: 220, boxShadow: "0 18px 48px rgba(83,31,150,0.08)", border: "1px solid rgba(255,255,255,0.82)", backdropFilter: "blur(16px)" }}>
+          <div className="min-h-[220px] rounded-[32px] border border-white/82 bg-white/78 p-6 shadow-[0_18px_48px_rgba(83,31,150,0.08)] backdrop-blur-[16px]">
             {loading ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 16 }}>
-                {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <SkeletonCard key={i} />
+                ))}
               </div>
             ) : emptyState ? (
               <EmptyState onExplore={() => navigate("/v1/create")} />
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 16 }}>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
                 {filteredSpaces.map((space) => (
                   <SpaceCard
                     key={space.id}
@@ -648,44 +423,24 @@ export default function SpaceDashboardPage() {
           </div>
         </div>
 
-        {/* ── New Spaces section ─────────────────────────────── */}
-        {/* <div style={{ position: "relative", zIndex: 1 }}>
-          <NewSpacesSection />
-        </div> */}
-
-        {/* ── Join dialog ────────────────────────────────────── */}
         <Dialog onOpenChange={setJoinOpen} open={joinOpen}>
           <DialogContent
-            className="!bg-white !border-[#e8e8f0] !shadow-[0_8px_40px_rgba(0,0,0,0.12)] !rounded-2xl !p-7 !max-w-sm"
+            className="!max-w-sm !rounded-2xl !border-[#e8e8f0] !bg-white !p-7 !shadow-[0_8px_40px_rgba(0,0,0,0.12)]"
             containerClassName="bg-black/30"
           >
-            {/* Header row */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 17, fontWeight: 700, color: "#111", margin: 0 }}>Enter with Code</h2>
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-[17px] font-bold text-[#111]">Enter with Code</h2>
               <button
                 onClick={() => setJoinOpen(false)}
                 aria-label="Close"
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  fontSize: 18,
-                  color: "#888",
-                  lineHeight: 1,
-                  padding: 4,
-                  borderRadius: 6,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
+                className="flex rounded-md p-1 text-[18px] leading-none text-[#888] transition-colors duration-150 ease-out hover:bg-[#f5f3fb] hover:text-[#555]"
               >
-                ✕
+                ×
               </button>
             </div>
 
-            {/* Input section */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-              <label style={{ fontSize: 14, fontWeight: 600, color: "#111" }} htmlFor="invite-code">
+            <div className="mb-4 flex flex-col gap-2">
+              <label className="text-sm font-semibold text-[#111]" htmlFor="invite-code">
                 Invite Code
               </label>
               <input
@@ -695,42 +450,16 @@ export default function SpaceDashboardPage() {
                 onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                 placeholder="The entry code is 6 or more digits."
                 value={inviteCode}
-                style={{
-                  width: "100%",
-                  padding: "11px 14px",
-                  borderRadius: 12,
-                  border: "1.5px solid #e0dcf8",
-                  fontSize: 14,
-                  color: "#333",
-                  background: "#fafafa",
-                  outline: "none",
-                }}
-                onFocus={(e) => (e.target.style.borderColor = "#a89cf5")}
-                onBlur={(e) => (e.target.style.borderColor = "#e0dcf8")}
+                className="w-full rounded-xl border-[1.5px] border-[#e0dcf8] bg-[#fafafa] px-[14px] py-[11px] text-sm text-[#333] outline-none transition-colors duration-150 ease-out focus:border-[#a89cf5]"
               />
             </div>
 
-            {/* Full-width Enter button */}
             <button
               disabled={joinLoading}
               onClick={handleJoinSpace}
-              style={{
-                width: "100%",
-                padding: "13px",
-                borderRadius: 14,
-                border: "none",
-                background: "#e8e4fc",
-                color: "#7c6af5",
-                fontSize: 15,
-                fontWeight: 600,
-                cursor: joinLoading ? "not-allowed" : "pointer",
-                opacity: joinLoading ? 0.7 : 1,
-                transition: "background 0.15s, color 0.15s",
-              }}
-              onMouseEnter={(e) => { if (!joinLoading) { e.currentTarget.style.background = "#d4ccf8"; e.currentTarget.style.color = "#531f96"; } }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "#e8e4fc"; e.currentTarget.style.color = "#7c6af5"; }}
+              className="w-full rounded-[14px] bg-[#e8e4fc] p-[13px] text-[15px] font-semibold text-[#7c6af5] transition-colors duration-150 ease-out hover:bg-[#d4ccf8] hover:text-[#531f96] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {joinLoading ? "Joining…" : "Enter"}
+              {joinLoading ? "Joining..." : "Enter"}
             </button>
           </DialogContent>
         </Dialog>

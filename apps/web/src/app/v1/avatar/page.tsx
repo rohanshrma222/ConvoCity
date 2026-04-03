@@ -20,6 +20,20 @@ type AvatarResponse = {
   outfitColor: string;
 };
 
+function NavBar({ onBack }: { onBack: () => void }) {
+  return (
+     <header style={{ background: "rgba(255,255,255,0.9)", backdropFilter: "blur(18px)", borderBottom: "1px solid #e6e2f4", position: "sticky", top: 0, zIndex: 40 }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: "linear-gradient(90deg,#2a0e5c 0%,#4d2db7 50%,#2a0e5c 100%)" }} />
+      <div style={{ maxWidth: 1475, margin: "0 auto", padding: "0 24px", height: 56, display: "flex", alignItems: "center" }}>
+        {/* Logo */}
+        <span style={{ fontWeight: 700, fontSize: 18, color: "#2d1b69", letterSpacing: "-0.5px", fontFamily: "inherit" }}>
+          ConvoCity
+        </span>
+      </div>
+    </header>
+  );
+}
+
 export default function AvatarPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -32,13 +46,8 @@ export default function AvatarPage() {
   const spaceId = searchParams.get("spaceId");
 
   useEffect(() => {
-    if (authLoading) {
-      return;
-    }
-
-    if (!spaceId) {
-      router.replace("/v1/space");
-    }
+    if (authLoading) return;
+    if (!spaceId) router.replace("/v1/space");
   }, [authLoading, router, spaceId]);
 
   const avatarOptions = useMemo<AvatarChoice[]>(
@@ -57,9 +66,7 @@ export default function AvatarPage() {
       return;
     }
 
-    if (!displayName.trim() || !selectedAvatar) {
-      return;
-    }
+    if (!displayName.trim() || !selectedAvatar) return;
 
     startTransition(async () => {
       try {
@@ -74,12 +81,7 @@ export default function AvatarPage() {
         });
 
         window.localStorage.setItem("avatarData", JSON.stringify(response.data));
-
-        toast({
-          title: "Avatar saved!",
-          variant: "success",
-        });
-
+        toast({ title: "Avatar saved!", variant: "success" });
         router.push(`/v1/space/${spaceId}`);
       } catch (error) {
         toast({
@@ -92,30 +94,18 @@ export default function AvatarPage() {
 
   if (authLoading || !spaceId) {
     return (
-      <div className="h-screen bg-[#f4f5f9] text-[#1c1c1e] font-sans flex flex-col relative overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-r from-[#2a0e5c] via-[#4d2db7] to-[#2a0e5c] opacity-80 z-20" />
-        <nav className="flex items-center justify-between px-6 md:px-10 py-4 relative z-10 w-full mx-auto animate-pulse">
-           <div className="w-48 h-8 bg-gray-200 rounded-lg"></div>
-          <div className="hidden md:flex gap-10">
-            <div className="w-16 h-4 bg-gray-200 rounded"></div>
-            <div className="w-16 h-4 bg-gray-200 rounded"></div>
-            <div className="w-16 h-4 bg-gray-200 rounded"></div>
+      <div className="h-screen overflow-hidden bg-[#f4f5f9] font-sans text-[#1c1c1e]">
+        <NavBar onBack={() => router.push("/v1/create")} />
+        <main className="mx-auto mt-2 grid h-[calc(100vh-56px)] w-full max-w-[1500px] grid-cols-1 gap-6 px-4 pb-8 md:px-10 lg:grid-cols-[45%_55%]">
+          <div className="flex flex-col gap-4">
+            <div className="flex-1 animate-pulse rounded-[36px] bg-gray-200" />
+            <div className="h-28 animate-pulse rounded-[36px] bg-white" />
           </div>
-          <div className="flex gap-4">
-            <div className="w-32 h-10 bg-gray-200 rounded-full"></div>
-            <div className="w-11 h-11 bg-gray-200 rounded-full"></div>
-          </div>
-        </nav>
-        <main className="flex-1 w-full max-w-[1500px] mx-auto px-4 pb-8 md:px-10 grid grid-cols-1 lg:grid-cols-[45%_55%] gap-6 items-stretch relative z-10 mt-2 h-0 min-h-0">
-           <div className="flex flex-col gap-4 h-full">
-              <div className="flex-1 bg-gray-200 rounded-[36px] animate-pulse" />
-              <div className="h-28 bg-white rounded-[36px] animate-pulse" />
-           </div>
-           <div className="bg-white rounded-[36px] shadow-[0_8px_32px_rgba(0,0,0,0.03)] h-full p-8 flex flex-col gap-6 animate-pulse">
-            <div className="h-14 bg-gray-100 rounded-3xl w-full" />
-            <div className="h-10 bg-gray-100 rounded-lg w-1/3" />
+          <div className="flex h-full flex-col gap-6 rounded-[36px] bg-white p-8 animate-pulse shadow-[0_8px_32px_rgba(0,0,0,0.03)]">
+            <div className="h-14 w-full rounded-3xl bg-gray-100" />
+            <div className="h-10 w-1/3 rounded-lg bg-gray-100" />
             <div className="grid grid-cols-4 gap-5">
-              {Array.from({ length: 8 }).map((_, i) => <div key={i} className="bg-gray-100 aspect-[4/4.0] rounded-[28px]" />)}
+              {Array.from({ length: 8 }).map((_, i) => <div key={i} className="aspect-square rounded-[28px] bg-gray-100" />)}
             </div>
           </div>
         </main>
@@ -124,115 +114,103 @@ export default function AvatarPage() {
   }
 
   return (
-    <div className="h-screen bg-[#f4f5f9] text-[#1c1c1e] font-sans flex flex-col relative overflow-hidden">
-      {/* Top Banner Gradient */}
-      <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-r from-[#2a0e5c] via-[#4d2db7] to-[#2a0e5c] opacity-80 z-20" />
+    <div className="relative flex h-screen flex-col overflow-hidden bg-[#f4f5f9] font-sans text-[#1c1c1e]">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute left-[-10%] top-14 h-72 w-72 rounded-full bg-[#cbb8ff]/35 blur-3xl" />
+        <div className="absolute right-[-8%] top-24 h-80 w-80 rounded-full bg-[#d8ccff]/45 blur-3xl" />
+      </div>
 
-      {/* Top Nav */}
-      <nav className="flex items-center justify-between px-6 md:px-10 py-4 relative z-10 w-full mx-auto">
-        <div className="font-extrabold text-[#38008f] text-2xl tracking-tighter">SpatialConnect</div>
-      </nav>
+      <NavBar onBack={() => router.push("/v1/create")} />
 
-      {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-[1500px] mx-auto px-4 pb-8 md:px-10 grid grid-cols-1 lg:grid-cols-[45%_55%] gap-6 items-stretch relative z-10 mt-4 min-h-0 ">
-        {/* Left Column */}
-        <div className="flex flex-col gap-5 h-full min-h-0">
-          {/* Big Preview Box */}
-          <div className="flex-1 bg-white/10 backdrop-blur-2xl border border-white/50 shadow-[0_8px_32px_0_rgba(0,0,0,0.1)] rounded-[36px] overflow-hidden relative flex flex-col items-center justify-center">
-            {/* Label pill */}
-            <div className="absolute top-8 left-8 bg-white shadow-sm rounded-full flex items-center pr-3 pl-1.5 py-1.5 gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-[#531f96] flex items-center justify-center text-white">
+      <main className="relative z-10 mx-auto mt-4 grid min-h-0 flex-1 w-full max-w-[1500px] grid-cols-1 gap-6 px-4 pb-8 md:px-10 lg:grid-cols-[45%_55%]">
+        <div className="flex min-h-0 flex-col gap-5">
+          <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden rounded-[36px] border border-white/50 bg-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.1)] backdrop-blur-2xl">
+            <div className="absolute left-8 top-8 flex items-center gap-2.5 rounded-full bg-white py-1.5 pl-1.5 pr-3 shadow-sm">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#531f96] text-white">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13.5 10H16a2 2 0 1 0 0-4h-2.5" /><path d="M11 6h-.5a2 2 0 1 0 0 4h.5" /><path d="M11 10v4" /><path d="M11 14l-2 4" /><path d="M11 14l2 4" /></svg>
               </div>
               <span className="text-[11px] font-extrabold tracking-wider text-[#6f6b7c]">WALK ANIMATION</span>
-              <div className="w-10 h-[22px] bg-[#cbb8ff] rounded-full relative ml-2 shadow-inner">
-                <div className="absolute right-1 top-1 w-[14px] h-[14px] bg-white rounded-full"></div>
+              <div className="relative ml-2 h-[22px] w-10 rounded-full bg-[#cbb8ff] shadow-inner">
+                <div className="absolute right-1 top-1 h-[14px] w-[14px] rounded-full bg-white" />
               </div>
             </div>
 
-            {/* Character Visual */}
             {selectedAvatar && (
-              <div className="relative pointer-events-none mt-6">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] bg-[radial-gradient(circle_at_center,rgba(83,31,150,0.06)_0%,transparent_50%)] blur-2xl z-0" />
-                <div className="relative flex gap-3 scale-[4.5] origin-center z-10" style={{ imageRendering: 'pixelated' }}>
-                  <div className="w-12 h-12 overflow-hidden relative">
-                    <div className="absolute left-1/2 -translate-x-1/2 w-12 h-[384px] bg-[url('/assets/Characters.png')] bg-no-repeat" style={{ backgroundPosition: `-${selectedAvatar.frameOffset + 48 * 1}px -10px`, backgroundSize: "576px 384px" }} />
+              <div className="relative mt-6 pointer-events-none">
+                <div className="absolute left-1/2 top-1/2 z-0 h-[320px] w-[320px] -translate-x-1/2 -translate-y-1/2 bg-[radial-gradient(circle_at_center,rgba(83,31,150,0.06)_0%,transparent_50%)] blur-2xl" />
+                <div className="relative z-10 flex origin-center scale-[4.5] gap-3" style={{ imageRendering: "pixelated" }}>
+                  <div className="relative h-12 w-12 overflow-hidden">
+                    <div className="absolute left-1/2 h-[384px] w-12 -translate-x-1/2 bg-[url('/assets/Characters.png')] bg-no-repeat" style={{ backgroundPosition: `-${selectedAvatar.frameOffset + 48}px -10px`, backgroundSize: "576px 384px" }} />
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Zoom/Refresh buttons */}
             <div className="absolute bottom-8 right-8 flex gap-3">
-              <button className="w-12 h-12 bg-white rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.05)] flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-800">
+              <button className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-gray-800 shadow-[0_2px_10px_rgba(0,0,0,0.05)] transition-colors hover:bg-gray-50">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /><line x1="11" y1="8" x2="11" y2="14" /><line x1="8" y1="11" x2="14" y2="11" /></svg>
               </button>
-              <button className="w-12 h-12 bg-white rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.05)] flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-800">
+              <button className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-gray-800 shadow-[0_2px_10px_rgba(0,0,0,0.05)] transition-colors hover:bg-gray-50">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
               </button>
             </div>
           </div>
 
-          {/* Avatar Identity Input */}
-          <div className="bg-white rounded-[36px] p-8 mt-auto shadow-[0_4px_32px_rgba(0,0,0,0.02)]">
-            <label className="text-[#38008f] font-extrabold tracking-widest text-[11px] uppercase block mb-3 pl-2">Avatar Identity</label>
+          <div className="mt-auto rounded-[36px] bg-white p-8 shadow-[0_4px_32px_rgba(0,0,0,0.02)]">
+            <label className="mb-3 block pl-2 text-[11px] font-extrabold uppercase tracking-widest text-[#38008f]">Avatar Identity</label>
             <div className="relative">
               <input
                 type="text"
                 placeholder="Set Name..."
                 value={displayName}
-                onChange={e => setDisplayName(e.target.value)}
+                onChange={(e) => setDisplayName(e.target.value)}
                 maxLength={20}
-                className="w-full bg-[#f4f5f9] hover:bg-[#eaecef] focus:bg-[#eaecef] transition-colors outline-none rounded-[28px] py-5 px-8 font-bold text-lg text-[#1c1c1e] placeholder:text-[#a0a0ab]"
+                className="w-full rounded-[28px] bg-[#f4f5f9] px-8 py-5 text-lg font-bold text-[#1c1c1e] outline-none transition-colors placeholder:text-[#a0a0ab] hover:bg-[#eaecef] focus:bg-[#eaecef]"
               />
-              <div className="absolute right-8 top-1/2 -translate-y-1/2 flex items-center gap-1.5 opacity-60">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#34d399]" />
-                <div className="w-2.5 h-2.5 rounded-full bg-[#34d399]" />
-                <div className="w-2.5 h-2.5 rounded-full bg-[#34d399]" />
+              <div className="absolute right-8 top-1/2 flex -translate-y-1/2 items-center gap-1.5 opacity-60">
+                <div className="h-2.5 w-2.5 rounded-full bg-[#34d399]" />
+                <div className="h-2.5 w-2.5 rounded-full bg-[#34d399]" />
+                <div className="h-2.5 w-2.5 rounded-full bg-[#34d399]" />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column */}
-        <div className="bg-white rounded-[36px] shadow-[0_8px_32px_rgba(0,0,0,0.03)] flex flex-col overflow-hidden h-full min-h-0">
-          {/* Tabs */}
-          <div className="px-6 pt-6 pb-2">
-            <div className="flex bg-[#f4f5f9] p-2 rounded-[24px]">
-              <button className="flex-1 bg-white text-[#38008f] font-bold rounded-[20px] py-3 text-[14px] flex items-center justify-center gap-2 shadow-[0_2px_12px_rgba(0,0,0,0.04)] transition-all">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[36px] bg-white shadow-[0_8px_32px_rgba(0,0,0,0.03)]">
+          <div className="px-6 pb-2 pt-6">
+            <div className="flex rounded-[24px] bg-[#f4f5f9] p-2">
+              <button className="flex flex-1 items-center justify-center gap-2 rounded-[20px] bg-white py-3 text-[14px] font-bold text-[#38008f] shadow-[0_2px_12px_rgba(0,0,0,0.04)] transition-all">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="7" r="4" /><path d="M5.5 21v-2a4.5 4.5 0 0 1 4.5-4.5h4a4.5 4.5 0 0 1 4.5 4.5v2" /></svg>
                 Character
               </button>
-              <button className="flex-1 text-[#6f6b7c] font-bold hover:text-[#1c1c1e] rounded-[20px] py-4 text-[15px] flex items-center justify-center gap-2 transition-colors">
+              <button className="flex flex-1 items-center justify-center gap-2 rounded-[20px] py-4 text-[15px] font-bold text-[#6f6b7c] transition-colors hover:text-[#1c1c1e]">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" /><path d="m14 14-4-4" /><path d="M11 21v-2a4 4 0 1 1-4-4" /><path d="M21 7v2a4 4 0 1 1-4 4" /></svg>
                 Hair Style
               </button>
-              <button className="flex-1 text-[#6f6b7c] font-bold hover:text-[#1c1c1e] rounded-[20px] py-4 text-[15px] flex items-center justify-center gap-2 transition-colors">
+              <button className="flex flex-1 items-center justify-center gap-2 rounded-[20px] py-4 text-[15px] font-bold text-[#6f6b7c] transition-colors hover:text-[#1c1c1e]">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" /></svg>
                 Clothing
               </button>
-              <button className="flex-1 text-[#6f6b7c] font-bold hover:text-[#1c1c1e] rounded-[20px] py-4 text-[15px] flex items-center justify-center gap-2 transition-colors">
+              <button className="flex flex-1 items-center justify-center gap-2 rounded-[20px] py-4 text-[15px] font-bold text-[#6f6b7c] transition-colors hover:text-[#1c1c1e]">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z" /><path d="m14 7 3 3" /><path d="M5 6v4" /><path d="M19 14v4" /><path d="M10 2v2" /><path d="M7 8H3" /><path d="M21 16h-4" /><path d="M11 3H9" /></svg>
                 Accessories
               </button>
             </div>
           </div>
 
-          <div className="px-6 py-2 flex-1 flex flex-col min-h-0">
-            {/* Selection Header */}
-            <div className="flex items-center justify-between mb-3">
+          <div className="flex min-h-0 flex-1 flex-col px-6 py-2">
+            <div className="mb-3 flex items-center justify-between">
               <h2 className="text-[22px] font-extrabold text-[#1c1c1e]">Select Character</h2>
               <div className="flex items-center gap-3">
-                <button className="w-10 h-10 bg-[#f0f0f4] rounded-[14px] flex items-center justify-center text-[#6f6b7c] hover:bg-[#e4e4eb] transition-colors"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6" /><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" /></svg></button>
-                <button className="w-10 h-10 bg-[#f0f0f4] rounded-[14px] flex items-center justify-center text-[#6f6b7c] hover:bg-[#e4e4eb] transition-colors"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6" /><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" /></svg></button>
+                <button className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#f0f0f4] text-[#6f6b7c] transition-colors hover:bg-[#e4e4eb]"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6" /><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" /></svg></button>
+                <button className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#f0f0f4] text-[#6f6b7c] transition-colors hover:bg-[#e4e4eb]"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6" /><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" /></svg></button>
               </div>
             </div>
 
-            {/* Character Grid */}
-            <div className="grid grid-cols-4 gap-4 mb-2">
+            <div className="mb-2 grid grid-cols-4 gap-4">
               {[...avatarOptions, { id: "empty1" }, { id: "empty2" }, { id: "empty3" }, { id: "empty4" }].map((avatar, idx) => {
-                if (avatar.id.startsWith('empty')) {
-                  return <div key={idx} className="bg-[#f0f0f4] rounded-[24px] aspect-[4/4.0] w-full border-[3px] border-transparent" />
+                if (avatar.id.startsWith("empty")) {
+                  return <div key={idx} className="aspect-square w-full rounded-[24px] border-[3px] border-transparent bg-[#f0f0f4]" />;
                 }
 
                 const isSelected = selectedAvatar?.id === avatar.id;
@@ -241,28 +219,25 @@ export default function AvatarPage() {
                     key={avatar.id}
                     onClick={() => setSelectedAvatar(avatar as AvatarChoice)}
                     className={cn(
-                      "bg-[#f0f0f4] rounded-[24px] aspect-[4/4.0] w-full flex items-center justify-center relative overflow-hidden transition-all duration-200",
-                      isSelected ? "border-[4px] border-[#531f96] shadow-[0_8px_24px_rgba(83,31,150,0.18)] bg-[#f9f8ff]" : "border-[4px] border-transparent hover:border-[#d0d0d8]"
+                      "relative aspect-square w-full overflow-hidden rounded-[24px] bg-[#f0f0f4] transition-all duration-200 flex items-center justify-center",
+                      isSelected ? "border-[4px] border-[#531f96] bg-[#f9f8ff] shadow-[0_8px_24px_rgba(83,31,150,0.18)]" : "border-[4px] border-transparent hover:border-[#d0d0d8]",
                     )}
                     type="button"
                   >
-                    <div className="relative flex gap-2 scale-[2.5] origin-bottom mt-2" style={{ imageRendering: 'pixelated' }}>
-                      <div className="w-10 h-10 overflow-hidden relative">
-                        <div className="absolute left-1/2 -translate-x-1/2 w-12 h-[384px] bg-[url('/assets/Characters.png')] bg-no-repeat" style={{ backgroundPosition: `-${(avatar as AvatarChoice).frameOffset + 48 * 1}px -9px`, backgroundSize: "576px 384px" }} />
+                    <div className="relative mt-2 flex origin-bottom scale-[2.5] gap-2" style={{ imageRendering: "pixelated" }}>
+                      <div className="relative h-10 w-10 overflow-hidden">
+                        <div className="absolute left-1/2 h-[384px] w-12 -translate-x-1/2 bg-[url('/assets/Characters.png')] bg-no-repeat" style={{ backgroundPosition: `-${(avatar as AvatarChoice).frameOffset + 48}px -9px`, backgroundSize: "576px 384px" }} />
                       </div>
                     </div>
-
                   </button>
                 );
               })}
             </div>
 
-            {/* Separator */}
-            <div className="w-full h-px bg-gray-200 mt-auto mb-4" />
+            <div className="mb-4 mt-auto h-px w-full bg-gray-200" />
 
-            {/* Footer Action */}
-            <div className="flex items-center justify-between pb-2 shrink-0">
-              <button className="flex items-center gap-2.5 text-[#6f6b7c] font-bold text-[14px] hover:text-[#1c1c1e] transition-colors" type="button">
+            <div className="flex shrink-0 items-center justify-between pb-2">
+              <button className="flex items-center gap-2.5 text-[14px] font-bold text-[#6f6b7c] transition-colors hover:text-[#1c1c1e]" type="button">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
                 Reset All
               </button>
@@ -272,8 +247,8 @@ export default function AvatarPage() {
                 onClick={handleSubmit}
                 type="button"
                 className={cn(
-                  "bg-[#531f96] hover:bg-[#431482]  text-white px-8 py-4 rounded-[24px] font-bold text-[16px] flex items-center gap-3 transition-all shadow-[inset_0_-3px_0_0_#cbb8ff]",
-                  (!selectedAvatar || !displayName.trim() || isPending) ? "opacity-50 cursor-not-allowed hover:bg-[#531f96]" : "shadow-[0_1px_40px_rgba(83,31,150,0.35)]"
+                  "flex items-center gap-3 rounded-[24px] bg-[#531f96] px-8 py-4 text-[16px] font-bold text-white transition-all hover:bg-[#431482]",
+                  (!selectedAvatar || !displayName.trim() || isPending) ? "cursor-not-allowed opacity-50 hover:bg-[#531f96]" : "shadow-[0_1px_40px_rgba(83,31,150,0.35)]",
                 )}
               >
                 {isPending ? "Saving..." : "Enter Space"}
@@ -283,7 +258,6 @@ export default function AvatarPage() {
           </div>
         </div>
       </main>
-
     </div>
   );
 }

@@ -22,6 +22,7 @@ const COLOR = {
 
 const CHAR_FRAME_W = 48;
 const CHAR_FRAME_H = 96;
+const CHARACTER_COUNT = 4;
 
 const DECOR_ASSETS = [
   "desk",
@@ -86,6 +87,52 @@ function safeSet(map: number[][], row: number, col: number, value: number) {
   map[row]![col] = value;
 }
 
+function normalizeCharacterId(value?: string): number {
+  const match = value?.match(/character-(\d+)/);
+  const parsed = match ? Number.parseInt(match[1] ?? "1", 10) : 1;
+
+  return Math.min(Math.max(parsed, 1), CHARACTER_COUNT) - 1;
+}
+
+function rowOffset(direction: "down" | "left" | "right" | "up") {
+  if (direction === "left") return 12;
+  if (direction === "right") return 24;
+  if (direction === "up") return 36;
+  return 0;
+}
+
+function idleFrame(characterIndex: number, direction: "down" | "left" | "right" | "up" = "down") {
+  return rowOffset(direction) + characterIndex * 3 + 1;
+}
+
+function walkFrames(characterIndex: number, direction: "down" | "left" | "right" | "up") {
+  const base = rowOffset(direction) + characterIndex * 3;
+  return [base + 1, base, base + 1, base + 2];
+}
+
+function animationKey(characterIndex: number, direction: "down" | "left" | "right" | "up" | "idle") {
+  return direction === "idle"
+    ? `character-${characterIndex}-idle`
+    : `character-${characterIndex}-walk-${direction}`;
+}
+
+type AvatarState = {
+  id: string;
+  userId: string;
+  displayName: string;
+  skinTone: string;
+  outfitColor: string;
+};
+
+type SocketPlayer = {
+  id: string;
+  x: number;
+  y: number;
+  name: string;
+  roomId: string;
+  characterId: string;
+};
+
 class GameScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -98,7 +145,8 @@ class GameScene extends Phaser.Scene {
   private socket!: Socket;
   private otherPlayers: Record<string, Phaser.GameObjects.Sprite> = {};
   private wallGroup!: Phaser.Physics.Arcade.StaticGroup;
-  private lastDirection = "down";
+  private avatarLookup: Record<string, AvatarState> = {};
+  private currentAvatar: AvatarState | null = null;
 
   constructor() {
     super({ key: "GameScene" });
@@ -188,9 +236,14 @@ class GameScene extends Phaser.Scene {
   create() {
     const roomId = this.game.registry.get("roomId") as string;
     const rooms = (this.game.registry.get("mapRooms") as MapRoom[]) ?? [];
+    const avatars = (this.game.registry.get("avatars") as AvatarState[]) ?? [];
+    const currentUserId = this.game.registry.get("currentUserId") as string;
     const map = this.buildMapFromTemplate(rooms);
     const mapW = COLS * TILE;
     const mapH = ROWS * TILE;
+
+    this.avatarLookup = Object.fromEntries(avatars.map((avatar) => [avatar.userId, avatar]));
+    this.currentAvatar = avatars.find((avatar) => avatar.userId === currentUserId) ?? null;
 
     this.wallGroup = this.physics.add.staticGroup();
 
@@ -228,72 +281,52 @@ class GameScene extends Phaser.Scene {
     this.addDecor();
     this.addRoomLabels(rooms);
 
-    this.anims.create({
-      key: "walk-down",
-      frames: this.anims.generateFrameNumbers("character", { frames: [1, 0, 1, 2] }),
-      frameRate: 8,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: "walk-left",
-      frames: this.anims.generateFrameNumbers("character", { frames: [13, 12, 13, 14] }),
-      frameRate: 8,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: "walk-right",
-      frames: this.anims.generateFrameNumbers("character", { frames: [25, 24, 25, 26] }),
-      frameRate: 8,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: "walk-up",
-      frames: this.anims.generateFrameNumbers("character", { frames: [37, 36, 37, 38] }),
-      frameRate: 8,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: "idle",
-      frames: [{ key: "character", frame: 1 }],
-      frameRate: 1,
-      repeat: 0,
-    });
-    this.anims.create({
-      key: "other-walk-down",
-      frames: this.anims.generateFrameNumbers("character", { frames: [4, 3, 4, 5] }),
-      frameRate: 8,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: "other-walk-left",
-      frames: this.anims.generateFrameNumbers("character", { frames: [16, 15, 16, 17] }),
-      frameRate: 8,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: "other-walk-right",
-      frames: this.anims.generateFrameNumbers("character", { frames: [28, 27, 28, 29] }),
-      frameRate: 8,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: "other-walk-up",
-      frames: this.anims.generateFrameNumbers("character", { frames: [40, 39, 40, 41] }),
-      frameRate: 8,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: "other-idle",
-      frames: [{ key: "character", frame: 4 }],
-      frameRate: 1,
-      repeat: 0,
-    });
+    for (let characterIndex = 0; characterIndex < CHARACTER_COUNT; characterIndex += 1) {
+      this.anims.create({
+        key: animationKey(characterIndex, "down"),
+        frames: this.anims.generateFrameNumbers("character", {
+          frames: walkFrames(characterIndex, "down"),
+        }),
+        frameRate: 8,
+        repeat: -1,
+      });
+      this.anims.create({
+        key: animationKey(characterIndex, "left"),
+        frames: this.anims.generateFrameNumbers("character", {
+          frames: walkFrames(characterIndex, "left"),
+        }),
+        frameRate: 8,
+        repeat: -1,
+      });
+      this.anims.create({
+        key: animationKey(characterIndex, "right"),
+        frames: this.anims.generateFrameNumbers("character", {
+          frames: walkFrames(characterIndex, "right"),
+        }),
+        frameRate: 8,
+        repeat: -1,
+      });
+      this.anims.create({
+        key: animationKey(characterIndex, "up"),
+        frames: this.anims.generateFrameNumbers("character", {
+          frames: walkFrames(characterIndex, "up"),
+        }),
+        frameRate: 8,
+        repeat: -1,
+      });
+      this.anims.create({
+        key: animationKey(characterIndex, "idle"),
+        frames: [{ key: "character", frame: idleFrame(characterIndex) }],
+        frameRate: 1,
+        repeat: 0,
+      });
+    }
 
     this.player = this.physics.add.sprite(9 * TILE, 5 * TILE, "character");
     this.player.setCollideWorldBounds(true);
     this.player.setDepth(2.8);
     this.player.setScale(1.2);
-    this.player.play("idle");
+    this.player.play(animationKey(normalizeCharacterId(this.currentAvatar?.skinTone), "idle"));
     this.player.setSize(24, 40);
     this.player.setOffset(12, 12);
 
@@ -315,13 +348,14 @@ class GameScene extends Phaser.Scene {
     this.socket = io("http://localhost:3001");
 
     this.socket.emit("player:join", {
-      name: "Player1",
+      name: this.currentAvatar?.displayName ?? "Player",
       x: this.player.x,
       y: this.player.y,
       roomId,
+      characterId: this.currentAvatar?.skinTone ?? "character-1",
     });
 
-    this.socket.on("players:init", (players: Array<{ id: string; x: number; y: number }>) => {
+    this.socket.on("players:init", (players: SocketPlayer[]) => {
       players.forEach((player) => {
         if (player.id !== this.socket.id) {
           this.addOtherPlayer(player);
@@ -329,17 +363,19 @@ class GameScene extends Phaser.Scene {
       });
     });
 
-    this.socket.on("player:joined", (player: { id: string; x: number; y: number }) => {
+    this.socket.on("player:joined", (player: SocketPlayer) => {
       this.addOtherPlayer(player);
     });
 
-    this.socket.on("player:moved", ({ id, x, y, anim }: { id: string; x: number; y: number; anim: string }) => {
+    this.socket.on("player:moved", ({ id, x, y, anim, characterId }: { id: string; x: number; y: number; anim: string; characterId?: string }) => {
       const other = this.otherPlayers[id];
 
       if (other) {
         other.setPosition(x, y);
-        const otherAnim = anim === "idle" ? "other-idle" : anim.replace("walk-", "other-walk-");
-        other.play(otherAnim, true);
+        const characterIndex = normalizeCharacterId(characterId);
+        const direction =
+          anim === "idle" ? "idle" : (anim.replace("walk-", "") as "down" | "left" | "right" | "up");
+        other.play(animationKey(characterIndex, direction), true);
       }
     });
 
@@ -365,9 +401,9 @@ class GameScene extends Phaser.Scene {
     this.wallGroup.add(wall);
   }
 
-  addOtherPlayer(player: { id: string; x: number; y: number }) {
+  addOtherPlayer(player: SocketPlayer) {
     const sprite = this.add.sprite(player.x, player.y, "character").setDepth(5).setScale(1.2);
-    sprite.play("other-idle");
+    sprite.play(animationKey(normalizeCharacterId(player.characterId), "idle"));
     this.otherPlayers[player.id] = sprite;
   }
 
@@ -380,34 +416,32 @@ class GameScene extends Phaser.Scene {
     const up = this.cursors.up.isDown || this.wasd.up.isDown;
     const down = this.cursors.down.isDown || this.wasd.down.isDown;
 
+    const characterId = this.currentAvatar?.skinTone ?? "character-1";
+    const characterIndex = normalizeCharacterId(characterId);
     let moving = false;
-    let currentAnim = "idle";
+    let currentAnim = animationKey(characterIndex, "idle");
 
     if (left) {
       this.player.setVelocityX(-speed);
-      this.player.play("walk-left", true);
-      currentAnim = "walk-left";
-      this.lastDirection = "left";
+      this.player.play(animationKey(characterIndex, "left"), true);
+      currentAnim = animationKey(characterIndex, "left");
       moving = true;
     } else if (right) {
       this.player.setVelocityX(speed);
-      this.player.play("walk-right", true);
-      currentAnim = "walk-right";
-      this.lastDirection = "right";
+      this.player.play(animationKey(characterIndex, "right"), true);
+      currentAnim = animationKey(characterIndex, "right");
       moving = true;
     }
 
     if (up) {
       this.player.setVelocityY(-speed);
-      this.player.play("walk-up", true);
-      currentAnim = "walk-up";
-      this.lastDirection = "up";
+      this.player.play(animationKey(characterIndex, "up"), true);
+      currentAnim = animationKey(characterIndex, "up");
       moving = true;
     } else if (down) {
       this.player.setVelocityY(speed);
-      this.player.play("walk-down", true);
-      currentAnim = "walk-down";
-      this.lastDirection = "down";
+      this.player.play(animationKey(characterIndex, "down"), true);
+      currentAnim = animationKey(characterIndex, "down");
       moving = true;
     }
 
@@ -416,14 +450,15 @@ class GameScene extends Phaser.Scene {
     }
 
     if (!moving) {
-      this.player.play("idle", true);
-      currentAnim = "idle";
+      this.player.play(animationKey(characterIndex, "idle"), true);
+      currentAnim = animationKey(characterIndex, "idle");
     }
 
     this.socket?.emit("player:move", {
       x: this.player.x,
       y: this.player.y,
       anim: currentAnim,
+      characterId,
     });
   }
 
@@ -436,6 +471,8 @@ interface PhaserGameProps {
   roomId: string;
   mapData: {
     rooms: MapRoom[];
+    avatars: AvatarState[];
+    currentUserId: string;
   };
 }
 
@@ -459,6 +496,8 @@ export default function PhaserGame({ roomId, mapData }: PhaserGameProps) {
         preBoot: (game) => {
           game.registry.set("roomId", roomId);
           game.registry.set("mapRooms", mapData.rooms);
+          game.registry.set("avatars", mapData.avatars);
+          game.registry.set("currentUserId", mapData.currentUserId);
         },
       },
     });

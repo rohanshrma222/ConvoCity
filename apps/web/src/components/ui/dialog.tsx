@@ -104,7 +104,7 @@ export function DialogContent({
       />
       <div
         className={cn(
-          "relative z-10 w-full max-w-lg rounded-[28px] border border-white/10 bg-[#111426] p-6 shadow-[0_24px_80px_rgba(3,4,12,0.58)]",
+          "relative z-10 w-full max-w-lg rounded-[28px] border border-white/10 bg-[#ffffff p-6 shadow-[0_24px_80px_rgba(3,4,12,0.58)]",
           "transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]",
           className,
         )}

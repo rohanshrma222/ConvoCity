@@ -15,6 +15,7 @@ interface Player {
   y: number;
   name: string;
   roomId: string;
+  characterId: string;
 }
 
 interface RoomState {
@@ -51,7 +52,7 @@ const removePlayerFromRoom = (playerId: string, roomId?: string) => {
 io.on("connection", (socket) => {
   console.log("Player connected:", socket.id);
 
-  socket.on("player:join", (data: { name: string; x: number; y: number; roomId: string }) => {
+  socket.on("player:join", (data: { name: string; x: number; y: number; roomId: string; characterId: string }) => {
     const roomId = data.roomId.trim();
     if (!roomId) return;
 
@@ -69,6 +70,7 @@ io.on("connection", (socket) => {
       y: data.y,
       name: data.name,
       roomId,
+      characterId: data.characterId,
     };
 
     room.players[socket.id] = player;
@@ -79,7 +81,7 @@ io.on("connection", (socket) => {
     socket.to(roomId).emit("player:joined", player);
   });
 
-  socket.on("player:move", (data: { x: number; y: number; anim: string }) => {
+  socket.on("player:move", (data: { x: number; y: number; anim: string; characterId?: string }) => {
     const roomId = socket.data.roomId as string | undefined;
     if (!roomId) return;
 
@@ -89,6 +91,9 @@ io.on("connection", (socket) => {
 
     player.x = data.x;
     player.y = data.y;
+    if (data.characterId) {
+      player.characterId = data.characterId;
+    }
 
     socket.to(roomId).emit("player:moved", { id: socket.id, ...data });
   });
