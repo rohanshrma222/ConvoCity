@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/toast";
+import LiveKitMicTest from "@/components/LiveKitMicTest";
 
 const PhaserGame = dynamic(() => import("./PhaserGame"), { ssr: false });
 
@@ -183,6 +184,10 @@ export default function GameCanvas({ roomId }: GameCanvasProps) {
 
   return (
     <div className="relative h-screen w-full">
+      <div className="absolute bottom-5 left-5 z-20 w-[320px]">
+        <LiveKitMicTest spaceId={roomId} />
+      </div>
+
       {isOwner ? (
         <div className="pointer-events-none absolute right-5 top-5 z-20 flex items-center gap-3">
           {/* Member count pill */}
