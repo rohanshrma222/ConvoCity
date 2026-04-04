@@ -55,6 +55,12 @@ type DecorItem = {
   originY?: number;
 };
 
+type PlayerPosition = {
+  userId: string;
+  x: number;
+  y: number;
+};
+
 const DECOR_LAYOUT: DecorItem[] = [
   { key: "desk", tileX: 1.1, tileY: 5.25, width: TILE * 4, height: TILE * 2.7 },
   { key: "desk", tileX: 15.1, tileY: 6.2, width: TILE * 4, height: TILE * 2.7 },
@@ -126,6 +132,7 @@ type AvatarState = {
 
 type SocketPlayer = {
   id: string;
+  userId: string;
   x: number;
   y: number;
   name: string;
@@ -220,6 +227,39 @@ class GameScene extends Phaser.Scene {
         .setOrigin(0.5)
         .setDepth(3);
     });
+  }
+
+  private emitPositions() {
+    const emit = this.game.registry.get("emitPositions") as
+      | ((players: PlayerPosition[]) => void)
+      | undefined;
+    const currentUserId = this.game.registry.get("currentUserId") as string | undefined;
+
+    if (!emit || !currentUserId || !this.player) {
+      return;
+    }
+
+    const positions: PlayerPosition[] = [
+      {
+        userId: currentUserId,
+        x: this.player.x,
+        y: this.player.y,
+      },
+      ...Object.values(this.otherPlayers)
+        .map((sprite) => {
+          const userId = sprite.getData("userId") as string | undefined;
+          if (!userId) return null;
+
+          return {
+            userId,
+            x: sprite.x,
+            y: sprite.y,
+          };
+        })
+        .filter((player): player is PlayerPosition => player !== null),
+    ];
+
+    emit(positions);
   }
 
   preload() {
@@ -348,6 +388,7 @@ class GameScene extends Phaser.Scene {
     this.socket = io("http://localhost:3001");
 
     this.socket.emit("player:join", {
+      userId: currentUserId,
       name: this.currentAvatar?.displayName ?? "Player",
       x: this.player.x,
       y: this.player.y,
@@ -361,10 +402,12 @@ class GameScene extends Phaser.Scene {
           this.addOtherPlayer(player);
         }
       });
+      this.emitPositions();
     });
 
     this.socket.on("player:joined", (player: SocketPlayer) => {
       this.addOtherPlayer(player);
+      this.emitPositions();
     });
 
     this.socket.on("player:moved", ({ id, x, y, anim, characterId }: { id: string; x: number; y: number; anim: string; characterId?: string }) => {
@@ -376,13 +419,17 @@ class GameScene extends Phaser.Scene {
         const direction =
           anim === "idle" ? "idle" : (anim.replace("walk-", "") as "down" | "left" | "right" | "up");
         other.play(animationKey(characterIndex, direction), true);
+        this.emitPositions();
       }
     });
 
     this.socket.on("player:left", (id: string) => {
       this.otherPlayers[id]?.destroy();
       delete this.otherPlayers[id];
+      this.emitPositions();
     });
+
+    this.emitPositions();
   }
 
   private addDecor() {
@@ -403,6 +450,7 @@ class GameScene extends Phaser.Scene {
 
   addOtherPlayer(player: SocketPlayer) {
     const sprite = this.add.sprite(player.x, player.y, "character").setDepth(5).setScale(1.2);
+    sprite.setData("userId", player.userId);
     sprite.play(animationKey(normalizeCharacterId(player.characterId), "idle"));
     this.otherPlayers[player.id] = sprite;
   }
@@ -460,6 +508,8 @@ class GameScene extends Phaser.Scene {
       anim: currentAnim,
       characterId,
     });
+
+    this.emitPositions();
   }
 
   shutdown() {
@@ -474,9 +524,10 @@ interface PhaserGameProps {
     avatars: AvatarState[];
     currentUserId: string;
   };
+  onPositionsChange?: (players: PlayerPosition[]) => void;
 }
 
-export default function PhaserGame({ roomId, mapData }: PhaserGameProps) {
+export default function PhaserGame({ roomId, mapData, onPositionsChange }: PhaserGameProps) {
   const gameRef = useRef<Phaser.Game | null>(null);
 
   useEffect(() => {
@@ -498,6 +549,7 @@ export default function PhaserGame({ roomId, mapData }: PhaserGameProps) {
           game.registry.set("mapRooms", mapData.rooms);
           game.registry.set("avatars", mapData.avatars);
           game.registry.set("currentUserId", mapData.currentUserId);
+          game.registry.set("emitPositions", onPositionsChange);
         },
       },
     });
@@ -506,7 +558,7 @@ export default function PhaserGame({ roomId, mapData }: PhaserGameProps) {
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
-  }, [mapData, roomId]);
+  }, [mapData, onPositionsChange, roomId]);
 
   return <div id="game-container" className="h-screen w-full" />;
 }

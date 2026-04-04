@@ -9,6 +9,11 @@ import {
   type RemoteTrackPublication,
 } from "livekit-client";
 import { fetchLiveKitToken } from "@/lib/livekit";
+import type { PlayerPosition } from "@/app/components/GameCanvas";
+
+const HEARING_RADIUS = 220;
+const ENTER_RADIUS = 220;
+const EXIT_RADIUS = 250;
 
 type Status =
   | "idle"
@@ -17,9 +22,18 @@ type Status =
   | "connected"
   | "failed";
 
-export default function LiveKitMicTest({ spaceId }: { spaceId: string }) {
+export default function LiveKitMicTest({
+  spaceId,
+  playerPositions,
+  currentUserId,
+}: {
+  spaceId: string;
+  playerPositions: PlayerPosition[];
+  currentUserId: string;
+}) {
   const roomRef = useRef<Room | null>(null);
   const audioElsRef = useRef<Map<string, HTMLAudioElement>>(new Map());
+  const audibleStateRef = useRef<Map<string, boolean>>(new Map());
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [remoteParticipants, setRemoteParticipants] = useState<string[]>([]);
@@ -127,6 +141,30 @@ export default function LiveKitMicTest({ spaceId }: { spaceId: string }) {
     };
   }, [spaceId]);
 
+  useEffect(() => {
+    const self = playerPositions.find((player) => player.userId === currentUserId);
+    if (!self) {
+      return;
+    }
+
+    for (const [participantId, audioEl] of audioElsRef.current.entries()) {
+      const remote = playerPositions.find((player) => player.userId === participantId);
+
+      if (!remote) {
+        audioEl.volume = 0;
+        audibleStateRef.current.set(participantId, false);
+        continue;
+      }
+
+      const distance = getDistance(self, remote);
+      const wasAudible = audibleStateRef.current.get(participantId) ?? false;
+      const nowAudible = wasAudible ? distance <= EXIT_RADIUS : distance <= ENTER_RADIUS;
+
+      audibleStateRef.current.set(participantId, nowAudible);
+      audioEl.volume = nowAudible ? getVolume(distance) : 0;
+    }
+  }, [currentUserId, playerPositions]);
+
   return (
     <div className="pointer-events-auto rounded-2xl border border-white/15 bg-black/55 p-4 text-white shadow-[0_12px_34px_rgba(0,0,0,0.35)] backdrop-blur-md">
       <div className="mb-2 flex items-center justify-between gap-3">
@@ -143,6 +181,9 @@ export default function LiveKitMicTest({ spaceId }: { spaceId: string }) {
 
       <div className="mt-3 text-xs text-white/80">
         <p>Remote participants: {remoteParticipants.length}</p>
+        {playerPositions.length > 0 ? (
+          <p className="mt-1 text-white/55">Tracked positions: {playerPositions.length}</p>
+        ) : null}
         {remoteParticipants.length > 0 ? (
           <div className="mt-2 space-y-1">
             {remoteParticipants.map((id) => (
@@ -159,4 +200,19 @@ export default function LiveKitMicTest({ spaceId }: { spaceId: string }) {
       ) : null}
     </div>
   );
+}
+
+function getDistance(a: PlayerPosition, b: PlayerPosition) {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function getVolume(distance: number) {
+  if (distance >= HEARING_RADIUS) {
+    return 0;
+  }
+
+  return Math.max(0, 1 - distance / HEARING_RADIUS);
 }

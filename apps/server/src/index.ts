@@ -11,6 +11,7 @@ const io = new Server(httpServer, {
 
 interface Player {
   id: string;
+  userId: string;
   x: number;
   y: number;
   name: string;
@@ -52,7 +53,7 @@ const removePlayerFromRoom = (playerId: string, roomId?: string) => {
 io.on("connection", (socket) => {
   console.log("Player connected:", socket.id);
 
-  socket.on("player:join", (data: { name: string; x: number; y: number; roomId: string; characterId: string }) => {
+  socket.on("player:join", (data: { userId: string; name: string; x: number; y: number; roomId: string; characterId: string }) => {
     const roomId = data.roomId.trim();
     if (!roomId) return;
 
@@ -66,6 +67,7 @@ io.on("connection", (socket) => {
     const room = getOrCreateRoom(roomId);
     const player: Player = {
       id: socket.id,
+      userId: data.userId,
       x: data.x,
       y: data.y,
       name: data.name,

@@ -16,6 +16,12 @@ export type MapRoom = {
   posY: number;
 };
 
+export type PlayerPosition = {
+  userId: string;
+  x: number;
+  y: number;
+};
+
 type SpaceResponse = {
   id?: string;
   name?: string;
@@ -62,6 +68,7 @@ export default function GameCanvas({ roomId }: GameCanvasProps) {
     inviteCode: string;
     memberCount: number;
   } | null>(null);
+  const [playerPositions, setPlayerPositions] = useState<PlayerPosition[]>([]);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [regenerating, startRegenerateTransition] = useTransition();
 
@@ -185,7 +192,11 @@ export default function GameCanvas({ roomId }: GameCanvasProps) {
   return (
     <div className="relative h-screen w-full">
       <div className="absolute bottom-5 left-5 z-20 w-[320px]">
-        <LiveKitMicTest spaceId={roomId} />
+        <LiveKitMicTest
+          currentUserId={currentUserId ?? ""}
+          playerPositions={playerPositions}
+          spaceId={roomId}
+        />
       </div>
 
       {isOwner ? (
@@ -285,7 +296,7 @@ export default function GameCanvas({ roomId }: GameCanvasProps) {
         </div>
       ) : null}
 
-      <PhaserGame mapData={mapData} roomId={roomId} />
+      <PhaserGame mapData={mapData} onPositionsChange={setPlayerPositions} roomId={roomId} />
     </div>
   );
 }
