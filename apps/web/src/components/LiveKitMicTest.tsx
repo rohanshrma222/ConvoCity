@@ -14,12 +14,14 @@ import type { PlayerPosition } from "@/app/components/GameCanvas";
 const HEARING_RADIUS = 220;
 const ENTER_RADIUS = 220;
 const EXIT_RADIUS = 250;
+const POSITION_SCALE = 96;
 
 type RemoteAudioGraph = {
   element: HTMLAudioElement;
   stream: MediaStream;
   source: MediaStreamAudioSourceNode;
   gain: GainNode;
+  panner?: PannerNode;
 };
 
 type Status =
@@ -54,6 +56,18 @@ export default function LiveKitMicTest({
     if (audioContextRef.current.state === "suspended") {
       void audioContextRef.current.resume();
     }
+      const listener = audioContextRef.current.listener;
+      listener.positionX.value = 0;
+      listener.positionY.value = 0;
+      listener.positionZ.value = 0;
+
+      listener.forwardX.value = 0;
+      listener.forwardY.value = 0;
+      listener.forwardZ.value = -1;
+
+      listener.upX.value = 0;
+      listener.upY.value = 1;
+      listener.upZ.value = 0;
 
     return audioContextRef.current;
   }
@@ -90,6 +104,7 @@ export default function LiveKitMicTest({
             existing.element.remove();
             existing.source.disconnect();
             existing.gain.disconnect();
+            existing.panner?.disconnect();
             remoteAudioRef.current.delete(participant.identity);
           }
         });
@@ -125,10 +140,21 @@ export default function LiveKitMicTest({
             const audioContext = getAudioContext();
             const source = audioContext.createMediaStreamSource(stream);
             const gain = audioContext.createGain();
+            const panner = audioContext.createPanner();
+
+            panner.panningModel = "HRTF";
+            panner.distanceModel = "inverse";
+            panner.refDistance = 1;
+            panner.maxDistance = 8;
+            panner.rolloffFactor = 0.8;
+            panner.coneInnerAngle = 360;
+            panner.coneOuterAngle = 0;
+            panner.coneOuterGain = 1;
 
             gain.gain.value = 1;
             source.connect(gain);
-            gain.connect(audioContext.destination);
+            gain.connect(panner);
+            panner.connect(audioContext.destination);
             audioEl.muted = true;
 
             remoteAudioRef.current.set(participant.identity, {
@@ -136,6 +162,7 @@ export default function LiveKitMicTest({
               stream,
               source,
               gain,
+              panner
             });
           },
         );
@@ -148,6 +175,7 @@ export default function LiveKitMicTest({
               existing.element.remove();
               existing.source.disconnect();
               existing.gain.disconnect();
+              existing.panner?.disconnect();
               remoteAudioRef.current.delete(participant.identity);
             }
           },
@@ -187,6 +215,7 @@ export default function LiveKitMicTest({
         remote.element.remove();
         remote.source.disconnect();
         remote.gain.disconnect();
+        remote.panner?.disconnect();
       }
       remoteAudioRef.current.clear();
 
@@ -216,6 +245,15 @@ export default function LiveKitMicTest({
       const wasAudible = audibleStateRef.current.get(participantId) ?? false;
       const nowAudible = wasAudible ? distance <= EXIT_RADIUS : distance <= ENTER_RADIUS;
 
+      const relativeX = (remote.x - self.x) / POSITION_SCALE;
+      const relativeZ = (remote.y - self.y) / POSITION_SCALE;
+
+      if (remoteAudio.panner) {
+        remoteAudio.panner.positionX.value = relativeX;
+        remoteAudio.panner.positionY.value = 0;
+        remoteAudio.panner.positionZ.value = relativeZ;
+      }
+      
       audibleStateRef.current.set(participantId, nowAudible);
       remoteAudio.gain.gain.value = nowAudible ? getVolume(distance) : 0;
     }
