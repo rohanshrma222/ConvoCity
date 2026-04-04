@@ -11,6 +11,7 @@
     "check-types": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@livekit/krisp-noise-filter": "^0.4.1",
     "@repo/auth": "workspace:^",
     "@repo/ui": "workspace:*",
     "@tailwindcss/postcss": "^4.2.2",

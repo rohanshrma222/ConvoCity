@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  LocalAudioTrack,
   Room,
   RoomEvent,
   Track,
@@ -89,6 +90,26 @@ export default function LiveKitMicTest({
         });
 
         roomRef.current = room;
+
+        room.on(RoomEvent.LocalTrackPublished, async (trackPublication) => {
+          if (
+            trackPublication.source !== Track.Source.Microphone ||
+            !(trackPublication.track instanceof LocalAudioTrack)
+          ) {
+            return;
+          }
+
+          const { KrispNoiseFilter, isKrispNoiseFilterSupported } = await import("@livekit/krisp-noise-filter");
+
+          if (!isKrispNoiseFilterSupported()) {
+            console.warn("Krisp noise filter is not supported in this browser");
+            return;
+          }
+
+          const krispProcessor = KrispNoiseFilter();
+          await trackPublication.track.setProcessor(krispProcessor);
+          await krispProcessor.setEnabled(true);
+        });
 
         room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
           setRemoteParticipants((current) =>
