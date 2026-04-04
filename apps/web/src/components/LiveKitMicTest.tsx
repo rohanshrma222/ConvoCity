@@ -15,6 +15,13 @@ const HEARING_RADIUS = 220;
 const ENTER_RADIUS = 220;
 const EXIT_RADIUS = 250;
 
+type RemoteAudioGraph = {
+  element: HTMLAudioElement;
+  stream: MediaStream;
+  source: MediaStreamAudioSourceNode;
+  gain: GainNode;
+};
+
 type Status =
   | "idle"
   | "fetching-token"
@@ -32,11 +39,24 @@ export default function LiveKitMicTest({
   currentUserId: string;
 }) {
   const roomRef = useRef<Room | null>(null);
-  const audioElsRef = useRef<Map<string, HTMLAudioElement>>(new Map());
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const remoteAudioRef = useRef<Map<string, RemoteAudioGraph>>(new Map());
   const audibleStateRef = useRef<Map<string, boolean>>(new Map());
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [remoteParticipants, setRemoteParticipants] = useState<string[]>([]);
+
+  function getAudioContext() {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContext();
+    }
+
+    if (audioContextRef.current.state === "suspended") {
+      void audioContextRef.current.resume();
+    }
+
+    return audioContextRef.current;
+  }
 
   useEffect(() => {
     let active = true;
@@ -65,10 +85,12 @@ export default function LiveKitMicTest({
         room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
           setRemoteParticipants((current) => current.filter((id) => id !== participant.identity));
 
-          const audioEl = audioElsRef.current.get(participant.identity);
-          if (audioEl) {
-            audioEl.remove();
-            audioElsRef.current.delete(participant.identity);
+          const existing = remoteAudioRef.current.get(participant.identity);
+          if (existing) {
+            existing.element.remove();
+            existing.source.disconnect();
+            existing.gain.disconnect();
+            remoteAudioRef.current.delete(participant.identity);
           }
         });
 
@@ -77,10 +99,12 @@ export default function LiveKitMicTest({
           (track, _publication: RemoteTrackPublication, participant: RemoteParticipant) => {
             if (track.kind !== Track.Kind.Audio) return;
 
-            const existing = audioElsRef.current.get(participant.identity);
+            const existing = remoteAudioRef.current.get(participant.identity);
             if (existing) {
-              existing.remove();
-              audioElsRef.current.delete(participant.identity);
+              existing.element.remove();
+              existing.source.disconnect();
+              existing.gain.disconnect();
+              remoteAudioRef.current.delete(participant.identity);
             }
 
             const audioEl = track.attach();
@@ -88,17 +112,43 @@ export default function LiveKitMicTest({
             audioEl.dataset.participantId = participant.identity;
             audioEl.className = "hidden";
             document.body.appendChild(audioEl);
-            audioElsRef.current.set(participant.identity, audioEl);
+
+            const mediaTrack =
+              audioEl.srcObject instanceof MediaStream ? audioEl.srcObject.getAudioTracks()[0] : null;
+
+            if (!mediaTrack) {
+              audioEl.remove();
+              return;
+            }
+
+            const stream = new MediaStream([mediaTrack]);
+            const audioContext = getAudioContext();
+            const source = audioContext.createMediaStreamSource(stream);
+            const gain = audioContext.createGain();
+
+            gain.gain.value = 1;
+            source.connect(gain);
+            gain.connect(audioContext.destination);
+            audioEl.muted = true;
+
+            remoteAudioRef.current.set(participant.identity, {
+              element: audioEl,
+              stream,
+              source,
+              gain,
+            });
           },
         );
 
         room.on(
           RoomEvent.TrackUnsubscribed,
           (_track, _publication: RemoteTrackPublication, participant: RemoteParticipant) => {
-            const audioEl = audioElsRef.current.get(participant.identity);
-            if (audioEl) {
-              audioEl.remove();
-              audioElsRef.current.delete(participant.identity);
+            const existing = remoteAudioRef.current.get(participant.identity);
+            if (existing) {
+              existing.element.remove();
+              existing.source.disconnect();
+              existing.gain.disconnect();
+              remoteAudioRef.current.delete(participant.identity);
             }
           },
         );
@@ -113,7 +163,6 @@ export default function LiveKitMicTest({
 
         await room.localParticipant.setMicrophoneEnabled(true);
         setStatus("connected");
-
         setRemoteParticipants(room.remoteParticipants.size > 0 ? [...room.remoteParticipants.keys()] : []);
       } catch (error) {
         if (!active) return;
@@ -134,10 +183,17 @@ export default function LiveKitMicTest({
         room.disconnect();
       }
 
-      for (const audioEl of audioElsRef.current.values()) {
-        audioEl.remove();
+      for (const remote of remoteAudioRef.current.values()) {
+        remote.element.remove();
+        remote.source.disconnect();
+        remote.gain.disconnect();
       }
-      audioElsRef.current.clear();
+      remoteAudioRef.current.clear();
+
+      if (audioContextRef.current) {
+        void audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
     };
   }, [spaceId]);
 
@@ -147,11 +203,11 @@ export default function LiveKitMicTest({
       return;
     }
 
-    for (const [participantId, audioEl] of audioElsRef.current.entries()) {
+    for (const [participantId, remoteAudio] of remoteAudioRef.current.entries()) {
       const remote = playerPositions.find((player) => player.userId === participantId);
 
       if (!remote) {
-        audioEl.volume = 0;
+        remoteAudio.gain.gain.value = 0;
         audibleStateRef.current.set(participantId, false);
         continue;
       }
@@ -161,7 +217,7 @@ export default function LiveKitMicTest({
       const nowAudible = wasAudible ? distance <= EXIT_RADIUS : distance <= ENTER_RADIUS;
 
       audibleStateRef.current.set(participantId, nowAudible);
-      audioEl.volume = nowAudible ? getVolume(distance) : 0;
+      remoteAudio.gain.gain.value = nowAudible ? getVolume(distance) : 0;
     }
   }, [currentUserId, playerPositions]);
 
