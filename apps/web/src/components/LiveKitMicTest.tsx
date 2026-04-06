@@ -177,7 +177,7 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
       return;
     }
 
-    const attached = trackPublication.track.attach();
+    const attached = trackPublication.track.attach() as HTMLVideoElement;
     attached.autoplay = true;
     attached.playsInline = true;
     attached.muted = true;
@@ -258,27 +258,6 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
           }
         });
 
-        room.on(RoomEvent.LocalTrackMuted, (publication) => {
-          if (publication.source === Track.Source.Microphone) {
-            setMicEnabled(false);
-          }
-
-          if (publication.source === Track.Source.Camera) {
-            setCameraEnabled(false);
-          }
-        });
-
-        room.on(RoomEvent.LocalTrackUnmuted, (publication) => {
-          if (publication.source === Track.Source.Microphone) {
-            setMicEnabled(true);
-          }
-
-          if (publication.source === Track.Source.Camera) {
-            attachLocalCameraTrack(publication);
-            setCameraEnabled(true);
-          }
-        });
-
         room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
           setRemoteParticipants((current) =>
             current.includes(participant.identity) ? current : [...current, participant.identity],
@@ -315,11 +294,11 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
                 remoteVideoRef.current.delete(participant.identity);
               }
 
-              const videoEl = track.attach();
+              const videoEl = track.attach() as HTMLVideoElement;
               videoEl.autoplay = true;
               videoEl.playsInline = true;
               videoEl.className = "h-full w-full object-cover";
-              remoteVideoRef.current.set(participant.identity, videoEl as HTMLVideoElement);
+              remoteVideoRef.current.set(participant.identity, videoEl);
               setRemoteVideoParticipants((current) =>
                 current.includes(participant.identity) ? current : [...current, participant.identity],
               );
@@ -599,16 +578,9 @@ function VideoCard({
 
       <div className="relative overflow-hidden rounded-[16px] bg-black/18">
         <div ref={onMountVideo} className="aspect-[1.2/1] w-full overflow-hidden bg-[#202227]" />
-
-        {showCameraOffState ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-[#202227] text-xs font-medium text-white/55">
-            Camera off
-          </div>
-        ) : null}
-
         {showMicMutedBadge ? (
-          <div className="absolute bottom-3 left-3 flex h-8 w-8 items-center justify-center rounded-full bg-[#7a2329]/88 text-[#ff6b67] shadow-[0_8px_20px_rgba(0,0,0,0.24)]">
-            <MicOff className="h-4 w-4 stroke-[2.2]" />
+          <div className="absolute bottom-3 left-3 flex h-4 w-4 items-center justify-center rounded-full text-[#ff0000]">
+            <MicOff className="h-3 w-3 stroke-[2.2]" />
           </div>
         ) : null}
       </div>
