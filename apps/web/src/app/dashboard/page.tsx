@@ -342,11 +342,11 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => router.push("/v1/space")}
-                    className="cursor-pointer rounded-2xl border-none bg-gradient-to-br from-[#7042b3] to-[#b889ff] px-8 py-3.5 text-[15px] font-bold text-white shadow-[0_10px_32px_rgba(74,20,140,0.32)] transition-transform duration-150 ease-out hover:scale-[1.02] active:scale-[0.97]"
+                    className="cursor-pointer rounded-2xl border-none bg-gradient-to-br from-[#7042b3] to-[#b889ff] px-8 py-3.5 text-[15px] font-bold text-white transition-transform duration-150 ease-out hover:scale-[1.02] active:scale-[0.97] shadow-[0px_0.5px_0px_0px_var(--color-purple-700)_inset,0px_8px_8px_0px_var(--color-neutral-200)] rounded-xl p-4"
                   >
                     Start for Free
                   </button>
-                  <button className="group flex cursor-pointer items-center gap-1.5 rounded-[16px] border-none bg-[#f0f1f3] px-6 py-3.5 text-[15px] font-semibold text-[#1A1A2E] transition-colors hover:bg-[#e1e2e5] hover:text-[#4A148C]">
+                  <button className="group flex cursor-pointer items-center gap-1.5 rounded-[16px] border-none bg-[#f0f1f3] px-6 py-3.5 text-[15px] font-semibold text-[#1A1A2E] transition-colors hover:bg-[#e1e2e5] hover:text-[#4A148C] shadow-[0px_0.5px_0px_0px_var(--color-neutral-200)_inset,0px_8px_8px_0px_var(--color-neutral-200)] rounded-xl p-4">
                     How it Works
                     <svg
                       className="transition-transform duration-200 group-hover:translate-x-1"

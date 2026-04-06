@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import dynamic from "next/dynamic";
+import { ChevronDown, Grid2x2, Mic, MicOff, MonitorUp, SmilePlus, Video, VideoOff } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/toast";
-import LiveKitMicTest from "@/components/LiveKitMicTest";
+import LiveKitMicTest, { type LiveKitMediaHandle } from "@/components/LiveKitMicTest";
 
 const PhaserGame = dynamic(() => import("./PhaserGame"), { ssr: false });
 
@@ -48,9 +49,38 @@ interface GameCanvasProps {
   roomId: string;
 }
 
+function DockControl({
+  icon,
+  onClick,
+  danger = false,
+  wide = false,
+}: {
+  icon: ReactNode;
+  onClick?: () => void;
+  danger?: boolean;
+  wide?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex h-11 items-center justify-center rounded-2xl border transition-colors duration-150 ease-out ${
+        wide ? "w-[52px]" : "w-11"
+      } ${
+        danger
+          ? "border-[#f3d4d2] bg-[#fff7f6] text-[#ea4335] hover:bg-[#fff0ee]"
+          : "border-[#ececef] bg-white text-[#6b7280] hover:bg-[#f7f7f8]"
+      }`}
+      type="button"
+    >
+      {icon}
+    </button>
+  );
+}
+
 export default function GameCanvas({ roomId }: GameCanvasProps) {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+  const liveKitControlsRef = useRef<LiveKitMediaHandle | null>(null);
   const [mapData, setMapData] = useState<{
     rooms: MapRoom[];
     avatars: Array<{
@@ -69,6 +99,11 @@ export default function GameCanvas({ roomId }: GameCanvasProps) {
     memberCount: number;
   } | null>(null);
   const [playerPositions, setPlayerPositions] = useState<PlayerPosition[]>([]);
+  const [mediaState, setMediaState] = useState({
+    micEnabled: false,
+    cameraEnabled: false,
+    connected: false,
+  });
   const [inviteOpen, setInviteOpen] = useState(false);
   const [regenerating, startRegenerateTransition] = useTransition();
 
@@ -191,10 +226,12 @@ export default function GameCanvas({ roomId }: GameCanvasProps) {
 
   return (
     <div className="relative h-screen w-full">
-      <div className="absolute bottom-5 left-5 z-20 w-[320px]">
+      <div className="absolute right-5 top-[76px] z-20 w-[160px] h-[150px]">
         <LiveKitMicTest
           currentUserId={currentUserId ?? ""}
+          onMediaStateChange={setMediaState}
           playerPositions={playerPositions}
+          ref={liveKitControlsRef}
           spaceId={roomId}
         />
       </div>
@@ -295,6 +332,48 @@ export default function GameCanvas({ roomId }: GameCanvasProps) {
           </div>
         </div>
       ) : null}
+
+      <div className="pointer-events-none absolute inset-x-0 bottom-5 z-20 flex justify-center">
+        <div className="pointer-events-auto flex items-center gap-3 rounded-[28px] border border-[#ececef] bg-white/96 px-5 py-3 shadow-[0_18px_50px_rgba(10,12,24,0.16)] backdrop-blur-xl">
+          <DockControl
+            danger={!mediaState.micEnabled}
+            wide
+            onClick={() => {
+              void liveKitControlsRef.current?.toggleMicrophone();
+            }}
+            icon={
+              <div className="flex items-center gap-1">
+                {mediaState.micEnabled ? (
+                  <Mic className="h-[18px] w-[18px] stroke-[2.2]" />
+                ) : (
+                  <MicOff className="h-[18px] w-[18px] stroke-[2.2]" />
+                )}
+                <ChevronDown className="h-[14px] w-[14px] stroke-[2.2]" />
+              </div>
+            }
+          />
+          <DockControl
+            danger={!mediaState.cameraEnabled}
+            wide
+            onClick={() => {
+              void liveKitControlsRef.current?.toggleCamera();
+            }}
+            icon={
+              <div className="flex items-center gap-1">
+                {mediaState.cameraEnabled ? (
+                  <Video className="h-[18px] w-[18px] stroke-[2.2]" />
+                ) : (
+                  <VideoOff className="h-[18px] w-[18px] stroke-[2.2]" />
+                )}
+                <ChevronDown className="h-[14px] w-[14px] stroke-[2.2]" />
+              </div>
+            }
+          />
+          <DockControl icon={<MonitorUp className="h-[18px] w-[18px] stroke-[2.2]" />} />
+          <DockControl icon={<Grid2x2 className="h-[18px] w-[18px] stroke-[2.2]" />} />
+          <DockControl icon={<SmilePlus className="h-[18px] w-[18px] stroke-[2.2]" />} />
+        </div>
+      </div>
 
       <PhaserGame mapData={mapData} onPositionsChange={setPlayerPositions} roomId={roomId} />
     </div>

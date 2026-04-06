@@ -76,7 +76,7 @@ export async function createLiveKitToken(req: Request, res: Response): Promise<v
       canPublish: true,
       canSubscribe: true,
       canPublishData: true,
-      canPublishSources: [TrackSource.MICROPHONE], // mic-only first
+      canPublishSources: [TrackSource.MICROPHONE, TrackSource.CAMERA],
     };
 
     at.addGrant(videoGrant);

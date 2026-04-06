@@ -1,20 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import {
   LocalAudioTrack,
   Room,
   RoomEvent,
   Track,
+  type LocalTrackPublication,
   type RemoteParticipant,
   type RemoteTrackPublication,
 } from "livekit-client";
+import { Maximize2, MicOff } from "lucide-react";
 import { fetchLiveKitToken } from "@/lib/livekit";
 import type { PlayerPosition } from "@/app/components/GameCanvas";
 
 const HEARING_RADIUS = 220;
 const ENTER_RADIUS = 220;
 const EXIT_RADIUS = 250;
+const VIDEO_RADIUS = 160;
 const POSITION_SCALE = 96;
 
 type RemoteAudioGraph = {
@@ -32,22 +35,119 @@ type Status =
   | "connected"
   | "failed";
 
-export default function LiveKitMicTest({
-  spaceId,
-  playerPositions,
-  currentUserId,
-}: {
+export type LiveKitMediaHandle = {
+  toggleMicrophone: () => Promise<void>;
+  toggleCamera: () => Promise<void>;
+};
+
+type LiveKitMicTestProps = {
   spaceId: string;
   playerPositions: PlayerPosition[];
   currentUserId: string;
-}) {
+  onMediaStateChange?: (state: {
+    micEnabled: boolean;
+    cameraEnabled: boolean;
+    connected: boolean;
+  }) => void;
+};
+
+const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(function LiveKitMicTest(
+  {
+    spaceId,
+    playerPositions,
+    currentUserId,
+    onMediaStateChange,
+  },
+  ref,
+) {
   const roomRef = useRef<Room | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const remoteAudioRef = useRef<Map<string, RemoteAudioGraph>>(new Map());
+  const remoteVideoRef = useRef<Map<string, HTMLVideoElement>>(new Map());
+  const localVideoRef = useRef<HTMLVideoElement | null>(null);
+  const localVideoContainerRef = useRef<HTMLDivElement | null>(null);
   const audibleStateRef = useRef<Map<string, boolean>>(new Map());
+  const micToggleInFlightRef = useRef(false);
+  const cameraToggleInFlightRef = useRef(false);
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [remoteParticipants, setRemoteParticipants] = useState<string[]>([]);
+  const [remoteVideoParticipants, setRemoteVideoParticipants] = useState<string[]>([]);
+  const [micEnabled, setMicEnabled] = useState(false);
+  const [cameraEnabled, setCameraEnabled] = useState(false);
+  const [nearbyVideoParticipants, setNearbyVideoParticipants] = useState<string[]>([]);
+  const visibleRemoteVideoParticipants = nearbyVideoParticipants.filter((participantId) =>
+    remoteVideoParticipants.includes(participantId),
+  );
+
+  useEffect(() => {
+    onMediaStateChange?.({
+      micEnabled,
+      cameraEnabled,
+      connected: status === "connected",
+    });
+  }, [cameraEnabled, micEnabled, onMediaStateChange, status]);
+
+  useImperativeHandle(ref, () => ({
+    async toggleMicrophone() {
+      const room = roomRef.current;
+      if (!room || micToggleInFlightRef.current) return;
+
+      micToggleInFlightRef.current = true;
+
+      try {
+        const next = !micEnabled;
+        setMicEnabled(next);
+
+        await room.localParticipant.setMicrophoneEnabled(next, {
+          autoGainControl: true,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          voiceIsolation: true,
+        });
+      } finally {
+        micToggleInFlightRef.current = false;
+      }
+    },
+    async toggleCamera() {
+      const room = roomRef.current;
+      if (!room || cameraToggleInFlightRef.current) return;
+
+      cameraToggleInFlightRef.current = true;
+
+        try {
+          const next = !cameraEnabled;
+
+          await room.localParticipant.setCameraEnabled(next);
+          setErrorMessage("");
+          setCameraEnabled(next);
+
+          if (next) {
+            syncLocalCameraPreview();
+          }
+
+          if (!next && localVideoRef.current) {
+            localVideoRef.current.remove();
+            localVideoRef.current = null;
+          }
+      } catch (error) {
+        setCameraEnabled((current) => !current);
+        console.warn("Unable to toggle camera", error);
+        if (error instanceof Error) {
+          if (error.name === "NotReadableError") {
+            setErrorMessage("Camera is already in use by another browser or app.");
+          } else if (error.name === "NotAllowedError") {
+            setErrorMessage("Camera permission was denied.");
+          } else {
+            setErrorMessage(error.message || "Unable to enable camera.");
+          }
+        }
+      } finally {
+        cameraToggleInFlightRef.current = false;
+      }
+    },
+  }), [cameraEnabled, micEnabled]);
 
   function getAudioContext() {
     if (!audioContextRef.current) {
@@ -57,20 +157,55 @@ export default function LiveKitMicTest({
     if (audioContextRef.current.state === "suspended") {
       void audioContextRef.current.resume();
     }
-      const listener = audioContextRef.current.listener;
-      listener.positionX.value = 0;
-      listener.positionY.value = 0;
-      listener.positionZ.value = 0;
 
-      listener.forwardX.value = 0;
-      listener.forwardY.value = 0;
-      listener.forwardZ.value = -1;
-
-      listener.upX.value = 0;
-      listener.upY.value = 1;
-      listener.upZ.value = 0;
+    const listener = audioContextRef.current.listener;
+    listener.positionX.value = 0;
+    listener.positionY.value = 0;
+    listener.positionZ.value = 0;
+    listener.forwardX.value = 0;
+    listener.forwardY.value = 0;
+    listener.forwardZ.value = -1;
+    listener.upX.value = 0;
+    listener.upY.value = 1;
+    listener.upZ.value = 0;
 
     return audioContextRef.current;
+  }
+
+  function attachLocalCameraTrack(trackPublication: LocalTrackPublication) {
+    if (!trackPublication.track || trackPublication.source !== Track.Source.Camera) {
+      return;
+    }
+
+    const attached = trackPublication.track.attach();
+    attached.autoplay = true;
+    attached.playsInline = true;
+    attached.muted = true;
+    attached.className = "h-full w-full object-cover";
+
+    if (localVideoRef.current) {
+      localVideoRef.current.remove();
+    }
+
+    localVideoRef.current = attached as HTMLVideoElement;
+
+    if (localVideoContainerRef.current) {
+      localVideoContainerRef.current.replaceChildren(localVideoRef.current);
+    }
+  }
+
+  function syncLocalCameraPreview() {
+    const room = roomRef.current;
+    if (!room) {
+      return;
+    }
+
+    const publication = room.localParticipant.getTrackPublication(Track.Source.Camera);
+    if (!publication || publication.source !== Track.Source.Camera || !publication.track || publication.isMuted) {
+      return;
+    }
+
+    attachLocalCameraTrack(publication);
   }
 
   useEffect(() => {
@@ -92,23 +227,56 @@ export default function LiveKitMicTest({
         roomRef.current = room;
 
         room.on(RoomEvent.LocalTrackPublished, async (trackPublication) => {
-          if (
-            trackPublication.source !== Track.Source.Microphone ||
-            !(trackPublication.track instanceof LocalAudioTrack)
-          ) {
-            return;
+          if (trackPublication.source === Track.Source.Microphone && trackPublication.track instanceof LocalAudioTrack) {
+            setMicEnabled(true);
+            const { KrispNoiseFilter, isKrispNoiseFilterSupported } = await import("@livekit/krisp-noise-filter");
+
+            if (isKrispNoiseFilterSupported()) {
+              const krispProcessor = KrispNoiseFilter();
+              await trackPublication.track.setProcessor(krispProcessor);
+              await krispProcessor.setEnabled(true);
+            }
           }
 
-          const { KrispNoiseFilter, isKrispNoiseFilterSupported } = await import("@livekit/krisp-noise-filter");
+          if (trackPublication.source === Track.Source.Camera && trackPublication.track) {
+            attachLocalCameraTrack(trackPublication);
+            setCameraEnabled(true);
+          }
+        });
 
-          if (!isKrispNoiseFilterSupported()) {
-            console.warn("Krisp noise filter is not supported in this browser");
-            return;
+        room.on(RoomEvent.LocalTrackUnpublished, (publication) => {
+          if (publication.source === Track.Source.Microphone) {
+            setMicEnabled(false);
           }
 
-          const krispProcessor = KrispNoiseFilter();
-          await trackPublication.track.setProcessor(krispProcessor);
-          await krispProcessor.setEnabled(true);
+          if (publication.source === Track.Source.Camera) {
+            if (localVideoRef.current) {
+              localVideoRef.current.remove();
+              localVideoRef.current = null;
+            }
+            setCameraEnabled(false);
+          }
+        });
+
+        room.on(RoomEvent.LocalTrackMuted, (publication) => {
+          if (publication.source === Track.Source.Microphone) {
+            setMicEnabled(false);
+          }
+
+          if (publication.source === Track.Source.Camera) {
+            setCameraEnabled(false);
+          }
+        });
+
+        room.on(RoomEvent.LocalTrackUnmuted, (publication) => {
+          if (publication.source === Track.Source.Microphone) {
+            setMicEnabled(true);
+          }
+
+          if (publication.source === Track.Source.Camera) {
+            attachLocalCameraTrack(publication);
+            setCameraEnabled(true);
+          }
         });
 
         room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
@@ -119,27 +287,53 @@ export default function LiveKitMicTest({
 
         room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
           setRemoteParticipants((current) => current.filter((id) => id !== participant.identity));
+          setRemoteVideoParticipants((current) => current.filter((id) => id !== participant.identity));
 
-          const existing = remoteAudioRef.current.get(participant.identity);
-          if (existing) {
-            existing.element.remove();
-            existing.source.disconnect();
-            existing.gain.disconnect();
-            existing.panner?.disconnect();
+          const existingAudio = remoteAudioRef.current.get(participant.identity);
+          if (existingAudio) {
+            existingAudio.element.remove();
+            existingAudio.source.disconnect();
+            existingAudio.gain.disconnect();
+            existingAudio.panner?.disconnect();
             remoteAudioRef.current.delete(participant.identity);
+          }
+
+          const existingVideo = remoteVideoRef.current.get(participant.identity);
+          if (existingVideo) {
+            existingVideo.remove();
+            remoteVideoRef.current.delete(participant.identity);
           }
         });
 
         room.on(
           RoomEvent.TrackSubscribed,
           (track, _publication: RemoteTrackPublication, participant: RemoteParticipant) => {
+            if (track.kind === Track.Kind.Video) {
+              const existingVideo = remoteVideoRef.current.get(participant.identity);
+              if (existingVideo) {
+                existingVideo.remove();
+                remoteVideoRef.current.delete(participant.identity);
+              }
+
+              const videoEl = track.attach();
+              videoEl.autoplay = true;
+              videoEl.playsInline = true;
+              videoEl.className = "h-full w-full object-cover";
+              remoteVideoRef.current.set(participant.identity, videoEl as HTMLVideoElement);
+              setRemoteVideoParticipants((current) =>
+                current.includes(participant.identity) ? current : [...current, participant.identity],
+              );
+              return;
+            }
+
             if (track.kind !== Track.Kind.Audio) return;
 
-            const existing = remoteAudioRef.current.get(participant.identity);
-            if (existing) {
-              existing.element.remove();
-              existing.source.disconnect();
-              existing.gain.disconnect();
+            const existingAudio = remoteAudioRef.current.get(participant.identity);
+            if (existingAudio) {
+              existingAudio.element.remove();
+              existingAudio.source.disconnect();
+              existingAudio.gain.disconnect();
+              existingAudio.panner?.disconnect();
               remoteAudioRef.current.delete(participant.identity);
             }
 
@@ -183,20 +377,30 @@ export default function LiveKitMicTest({
               stream,
               source,
               gain,
-              panner
+              panner,
             });
           },
         );
 
         room.on(
           RoomEvent.TrackUnsubscribed,
-          (_track, _publication: RemoteTrackPublication, participant: RemoteParticipant) => {
-            const existing = remoteAudioRef.current.get(participant.identity);
-            if (existing) {
-              existing.element.remove();
-              existing.source.disconnect();
-              existing.gain.disconnect();
-              existing.panner?.disconnect();
+          (track, _publication: RemoteTrackPublication, participant: RemoteParticipant) => {
+            if (track.kind === Track.Kind.Video) {
+              const existingVideo = remoteVideoRef.current.get(participant.identity);
+              if (existingVideo) {
+                existingVideo.remove();
+                remoteVideoRef.current.delete(participant.identity);
+              }
+              setRemoteVideoParticipants((current) => current.filter((id) => id !== participant.identity));
+              return;
+            }
+
+            const existingAudio = remoteAudioRef.current.get(participant.identity);
+            if (existingAudio) {
+              existingAudio.element.remove();
+              existingAudio.source.disconnect();
+              existingAudio.gain.disconnect();
+              existingAudio.panner?.disconnect();
               remoteAudioRef.current.delete(participant.identity);
             }
           },
@@ -210,7 +414,14 @@ export default function LiveKitMicTest({
           return;
         }
 
-        await room.localParticipant.setMicrophoneEnabled(true);
+        await room.localParticipant.setMicrophoneEnabled(true, {
+          autoGainControl: true,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          voiceIsolation: true,
+        });
+
         setStatus("connected");
         setRemoteParticipants(room.remoteParticipants.size > 0 ? [...room.remoteParticipants.keys()] : []);
       } catch (error) {
@@ -240,6 +451,16 @@ export default function LiveKitMicTest({
       }
       remoteAudioRef.current.clear();
 
+      for (const remoteVideo of remoteVideoRef.current.values()) {
+        remoteVideo.remove();
+      }
+      remoteVideoRef.current.clear();
+
+      if (localVideoRef.current) {
+        localVideoRef.current.remove();
+        localVideoRef.current = null;
+      }
+
       if (audioContextRef.current) {
         void audioContextRef.current.close();
         audioContextRef.current = null;
@@ -250,8 +471,11 @@ export default function LiveKitMicTest({
   useEffect(() => {
     const self = playerPositions.find((player) => player.userId === currentUserId);
     if (!self) {
+      setNearbyVideoParticipants([]);
       return;
     }
+
+    const nextNearbyVideoParticipants: string[] = [];
 
     for (const [participantId, remoteAudio] of remoteAudioRef.current.entries()) {
       const remote = playerPositions.find((player) => player.userId === participantId);
@@ -274,45 +498,120 @@ export default function LiveKitMicTest({
         remoteAudio.panner.positionY.value = 0;
         remoteAudio.panner.positionZ.value = relativeZ;
       }
-      
+
       audibleStateRef.current.set(participantId, nowAudible);
       remoteAudio.gain.gain.value = nowAudible ? getVolume(distance) : 0;
     }
+
+    for (const participantId of remoteVideoRef.current.keys()) {
+      const remote = playerPositions.find((player) => player.userId === participantId);
+      if (!remote) continue;
+
+      const distance = getDistance(self, remote);
+      if (distance <= VIDEO_RADIUS) {
+        nextNearbyVideoParticipants.push(participantId);
+      }
+    }
+
+    setNearbyVideoParticipants(nextNearbyVideoParticipants);
   }, [currentUserId, playerPositions]);
 
+  function mountLocalVideo(container: HTMLDivElement | null) {
+    localVideoContainerRef.current = container;
+
+    if (!container || !localVideoRef.current) return;
+
+    if (localVideoRef.current.parentElement !== container) {
+      container.replaceChildren(localVideoRef.current);
+    }
+  }
+
+  function mountRemoteVideo(participantId: string, container: HTMLDivElement | null) {
+    if (!container) return;
+
+    const videoEl = remoteVideoRef.current.get(participantId);
+    if (!videoEl) return;
+
+    if (videoEl.parentElement !== container) {
+      container.replaceChildren(videoEl);
+    }
+  }
+
   return (
-    <div className="pointer-events-auto rounded-2xl border border-white/15 bg-black/55 p-4 text-white shadow-[0_12px_34px_rgba(0,0,0,0.35)] backdrop-blur-md">
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <p className="text-sm font-semibold">LiveKit mic test</p>
-        <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-white/80">
-          {status}
-        </span>
+    <div className="pointer-events-auto flex flex-col gap-3">
+      <VideoCard
+        label="You"
+        onMountVideo={mountLocalVideo}
+        showMicMutedBadge={!micEnabled}
+        showCameraOffState={!cameraEnabled}
+      />
+
+      {visibleRemoteVideoParticipants.map((participantId) => (
+        <VideoCard
+          key={participantId}
+          label={participantId}
+          onMountVideo={(node) => mountRemoteVideo(participantId, node)}
+        />
+      ))}
+
+      {errorMessage ? (
+        <div className="overflow-hidden rounded-[18px] border border-red-400/15 bg-[#2b2e33]/88 p-3 text-white shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+          <p className="rounded-lg bg-red-500/15 px-2.5 py-2 text-xs text-red-100">{errorMessage}</p>
+        </div>
+      ) : null}
+
+      {status !== "connected" && !cameraEnabled && visibleRemoteVideoParticipants.length === 0 ? (
+        <div className="overflow-hidden rounded-[18px] border border-white/10 bg-[#2b2e33]/88 p-3 text-white shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+          <p className="text-[11px] text-white/55">Status: {status}</p>
+        </div>
+      ) : null}
+    </div>
+  );
+});
+
+export default LiveKitMicTest;
+
+function VideoCard({
+  label,
+  onMountVideo,
+  showMicMutedBadge = false,
+  showCameraOffState = false,
+}: {
+  label: string;
+  onMountVideo: (container: HTMLDivElement | null) => void;
+  showMicMutedBadge?: boolean;
+  showCameraOffState?: boolean;
+}) {
+  return (
+    <div className="overflow-hidden rounded-[18px] border border-white/10 bg-[#2b2e33]/88 p-3 text-white shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="inline-flex items-center gap-2 rounded-lg bg-black/18 px-2.5 py-1.5">
+          <span className="h-2 w-2 rounded-full bg-[#45d56f]" />
+          <span className="max-w-[170px] truncate text-[13px] font-semibold">{label}</span>
+        </div>
+        <button
+          className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-white/85 transition-colors duration-150 ease-out hover:bg-white/14"
+          type="button"
+        >
+          <Maximize2 className="h-4 w-4 stroke-[2.1]" />
+        </button>
       </div>
 
-      <p className="text-xs leading-5 text-white/70">
-        Join this same space in two signed-in tabs. If both show <span className="font-semibold text-white">connected</span>,
-        you should be able to talk.
-      </p>
+      <div className="relative overflow-hidden rounded-[16px] bg-black/18">
+        <div ref={onMountVideo} className="aspect-[1.2/1] w-full overflow-hidden bg-[#202227]" />
 
-      <div className="mt-3 text-xs text-white/80">
-        <p>Remote participants: {remoteParticipants.length}</p>
-        {playerPositions.length > 0 ? (
-          <p className="mt-1 text-white/55">Tracked positions: {playerPositions.length}</p>
+        {showCameraOffState ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#202227] text-xs font-medium text-white/55">
+            Camera off
+          </div>
         ) : null}
-        {remoteParticipants.length > 0 ? (
-          <div className="mt-2 space-y-1">
-            {remoteParticipants.map((id) => (
-              <div key={id} className="truncate rounded-lg bg-white/8 px-2 py-1">
-                {id}
-              </div>
-            ))}
+
+        {showMicMutedBadge ? (
+          <div className="absolute bottom-3 left-3 flex h-8 w-8 items-center justify-center rounded-full bg-[#7a2329]/88 text-[#ff6b67] shadow-[0_8px_20px_rgba(0,0,0,0.24)]">
+            <MicOff className="h-4 w-4 stroke-[2.2]" />
           </div>
         ) : null}
       </div>
-
-      {errorMessage ? (
-        <p className="mt-3 rounded-lg bg-red-500/15 px-2.5 py-2 text-xs text-red-100">{errorMessage}</p>
-      ) : null}
     </div>
   );
 }
