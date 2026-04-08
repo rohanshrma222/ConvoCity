@@ -6,19 +6,7 @@ import { io, Socket } from "socket.io-client";
 import type { MapRoom } from "./GameCanvas";
 
 const TILE = 48;
-const COLS = 20;
-const ROWS = 17;
 const DECOR_DEPTH = 3.5;
-
-const COLOR = {
-  floor:        0x4a4a6a,
-  floorAlt:     0x424260,
-  outerWall:    0x2a2a40,
-  desk:         0x8b6914,
-  deskTop:      0xc49a1e,
-  meetingWall:  0x3a3a5a,
-  meetingFloor: 0x3d3d5c,
-};
 
 const CHAR_FRAME_W = 48;
 const CHAR_FRAME_H = 96;
@@ -42,6 +30,9 @@ const DECOR_ASSETS = [
   "coffemac",
   "chair1",
   "keyboardmouse",
+  "back-chair",
+  "desk1",
+  "AC"
 ] as const;
 
 type DecorItem = {
@@ -60,38 +51,6 @@ type PlayerPosition = {
   x: number;
   y: number;
 };
-
-const DECOR_LAYOUT: DecorItem[] = [
-  { key: "desk", tileX: 1.1, tileY: 5.25, width: TILE * 4, height: TILE * 2.7 },
-  { key: "desk", tileX: 15.1, tileY: 6.2, width: TILE * 4, height: TILE * 2.7 },
-  { key: "whiteboard", tileX: 10.7, tileY: 1.5, width: TILE * 1.6, height: TILE * 1.2, depth: 2.8, originX: 0, originY: 1 },
-  { key: "sofachair", tileX: 5.0, tileY: 8.2, width: TILE * 1.3, height: TILE * 1.4 },
-  { key: "sofachair", tileX: 6.0, tileY: 8.2, width: TILE * 1.3, height: TILE * 1.4 },
-  { key: "printer", tileX: 17.6, tileY: 4.6, width: TILE * 1.35, height: TILE * 1.05 },
-  { key: "shelves", tileX: 15.2, tileY: 2.3, width: TILE * 2.4, height: TILE *2.0 },
-  { key: "storage", tileX: 12.2, tileY: 2.5, width: TILE * 2.5, height: TILE * 2.7 },
-  { key: "vending", tileX: 4.2, tileY: 12.4, width: TILE * 1.7, height: TILE * 2.6, depth: 2.7 },
-  { key: "water", tileX: 9.2, tileY: 12.6, width: TILE * 2.05, height: TILE * 2.95, depth: 2.7 },
-  { key: "plant1", tileX: 3.1, tileY: 1.55, width: TILE * 1.05, height: TILE * 1.95 },
-  { key: "plant1", tileX: 4.3, tileY: 16.1, width: TILE * 1.05, height: TILE * 1.95 },
-  { key: "plant1", tileX: 10.1, tileY: 16.1, width: TILE * 1.05, height: TILE * 1.95 },
-  { key: "plant2", tileX: 17.6, tileY: 2.3, width: TILE * 1.61, height: TILE * 1.7 },
-  { key: "splant1", tileX: 6.1, tileY: 12.5, width: TILE * 0.8, height: TILE * 0.8, depth: 3.1 },
-  { key: "splant2", tileX: 11.1, tileY: 12.5, width: TILE * 0.9, height: TILE * 0.8, depth: 3.1 },
-  { key: "chairs", tileX: 4.8, tileY: 2.5, width: TILE * 3.4, height: TILE * 2.5, depth: 2.7 },
-  { key: "coffemac", tileX: 8.0, tileY: 2.5, width: TILE * 3.0, height: TILE * 2.5, depth: 3.1 },
-  { key: "monitor", tileX: 16.1, tileY: 4.2, width: TILE * 1.6, height: TILE * 1.3, depth: 4.1 },
-  { key: "chair1", tileX: 1.3, tileY: 2.8, width: TILE * 1.8, height: TILE * 1.8, depth: 2.7 },
-  { key: "keyboardmouse", tileX: 16.2, tileY: 4.74, width: TILE * 1.62, height: TILE * 0.6, depth: 4.1 },
-];
-
-function safeSet(map: number[][], row: number, col: number, value: number) {
-  if (row < 0 || row >= ROWS || col < 0 || col >= COLS) {
-    return;
-  }
-
-  map[row]![col] = value;
-}
 
 function normalizeCharacterId(value?: string): number {
   const match = value?.match(/character-(\d+)/);
@@ -130,6 +89,41 @@ type AvatarState = {
   outfitColor: string;
 };
 
+type TemplateMeetingRoom = {
+  posX: number;
+  posY: number;
+  name: string;
+};
+
+type TemplateRoomLabel = {
+  text: string;
+  tileX: number;
+  tileY: number;
+};
+
+type TemplateColors = {
+  floor: string;
+  floorAlt: string;
+  outerWall: string;
+  meetingWall: string;
+  meetingFloor: string;
+};
+
+type TemplateData = {
+  id: string;
+  name: string;
+  cols: number;
+  rows: number;
+  spawnX: number;
+  spawnY: number;
+  tileSize: number;
+  tileGrid: number[][];
+  meetingRooms: TemplateMeetingRoom[];
+  objects: DecorItem[];
+  roomLabels?: TemplateRoomLabel[];
+  colors: TemplateColors;
+};
+
 type SocketPlayer = {
   id: string;
   userId: string;
@@ -157,76 +151,6 @@ class GameScene extends Phaser.Scene {
 
   constructor() {
     super({ key: "GameScene" });
-  }
-
-  private buildMapFromTemplate(rooms: MapRoom[]): number[][] {
-    const map: number[][] = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
-
-    for (let col = 0; col < COLS; col++) {
-      map[0]![col] = 1;
-      map[ROWS - 1]![col] = 1;
-    }
-
-    for (let row = 0; row < ROWS; row++) {
-      map[row]![0] = 1;
-      map[row]![COLS - 1] = 1;
-    }
-
-    rooms.forEach((room) => {
-      if (room.type === "MEETING") {
-        for (let i = 0; i < 8; i++) {
-          safeSet(map, room.posY, room.posX + i, 3);
-        }
-
-        for (let i = 1; i < 5; i++) {
-          safeSet(map, room.posY + i, room.posX, 3);
-          safeSet(map, room.posY + i, room.posX + 7, 3);
-        }
-
-        safeSet(map, room.posY + 5, room.posX, 3);
-        safeSet(map, room.posY + 5, room.posX + 1, 3);
-        safeSet(map, room.posY + 5, room.posX + 2, 3);
-        safeSet(map, room.posY + 5, room.posX + 5, 3);
-        safeSet(map, room.posY + 5, room.posX + 6, 3);
-        safeSet(map, room.posY + 5, room.posX + 7, 3);
-      }
-
-      if (room.type === "OFFICE") {
-        safeSet(map, room.posY, room.posX, 2);
-        safeSet(map, room.posY, room.posX + 1, 2);
-        safeSet(map, room.posY + 1, room.posX, 2);
-        safeSet(map, room.posY + 1, room.posX + 1, 2);
-      }
-    });
-
-    return map;
-  }
-
-  private isMeetingFloorTile(rooms: MapRoom[], row: number, col: number): boolean {
-    return rooms.some(
-      (room) =>
-        room.type === "MEETING" &&
-        row >= room.posY + 1 &&
-        row <= room.posY + 4 &&
-        col >= room.posX + 1 &&
-        col <= room.posX + 6,
-    );
-  }
-
-  private addRoomLabels(rooms: MapRoom[]) {
-    rooms.forEach((room) => {
-      const offsetX = room.type === "MEETING" ? 4 : 1.6;
-      const offsetY = room.type === "MEETING" ? 2.8 : 0.9;
-
-      this.add
-        .text((room.posX + offsetX) * TILE, (room.posY + offsetY) * TILE, room.name, {
-          fontSize: "11px",
-          color: "#aaaacc",
-          fontFamily: "monospace",
-        })
-        .setOrigin(0.5)
-        .setDepth(3);
-    });
   }
 
   private emitPositions() {
@@ -263,6 +187,9 @@ class GameScene extends Phaser.Scene {
   }
 
   preload() {
+    const templateId = (this.game.registry.get("templateId") as string | undefined) ?? "modern-office";
+
+    this.load.json("template", `/assets/templates/${templateId}.json`);
     this.load.spritesheet("character", "/assets/Characters.png", {
       frameWidth: CHAR_FRAME_W,
       frameHeight: CHAR_FRAME_H,
@@ -275,51 +202,75 @@ class GameScene extends Phaser.Scene {
 
   create() {
     const roomId = this.game.registry.get("roomId") as string;
-    const rooms = (this.game.registry.get("mapRooms") as MapRoom[]) ?? [];
     const avatars = (this.game.registry.get("avatars") as AvatarState[]) ?? [];
     const currentUserId = this.game.registry.get("currentUserId") as string;
-    const map = this.buildMapFromTemplate(rooms);
-    const mapW = COLS * TILE;
-    const mapH = ROWS * TILE;
+    const template = this.cache.json.get("template") as TemplateData | undefined;
+
+    if (!template) {
+      throw new Error("Template JSON failed to load");
+    }
+
+    const tileSize = template.tileSize || TILE;
+    const map = template.tileGrid;
+    const mapRows = template.rows || map.length;
+    const mapCols = template.cols || map[0]?.length || 0;
+    const mapW = mapCols * tileSize;
+    const mapH = mapRows * tileSize;
+    const colors = {
+      floor: parseColor(template.colors.floor),
+      floorAlt: parseColor(template.colors.floorAlt),
+      outerWall: parseColor(template.colors.outerWall),
+      meetingWall: parseColor(template.colors.meetingWall),
+      meetingFloor: parseColor(template.colors.meetingFloor),
+    };
+    const meetingRects = template.meetingRooms.map((room) => ({
+      x1: room.posX + 1,
+      y1: room.posY + 1,
+      x2: room.posX + 6,
+      y2: room.posY + 4,
+    }));
 
     this.avatarLookup = Object.fromEntries(avatars.map((avatar) => [avatar.userId, avatar]));
     this.currentAvatar = avatars.find((avatar) => avatar.userId === currentUserId) ?? null;
 
     this.wallGroup = this.physics.add.staticGroup();
 
-    for (let row = 0; row < ROWS; row++) {
-      for (let col = 0; col < COLS; col++) {
-        const x = col * TILE;
-        const y = row * TILE;
+    for (let row = 0; row < mapRows; row++) {
+      for (let col = 0; col < mapCols; col++) {
+        const x = col * tileSize;
+        const y = row * tileSize;
         const tile = map[row]![col]!;
         const isAlt = (row + col) % 2 === 0;
+        const isMeetingFloor = meetingRects.some(
+          (rect) => row >= rect.y1 && row <= rect.y2 && col >= rect.x1 && col <= rect.x2,
+        );
 
-        this.add.image(x, y, "floor").setOrigin(0).setDepth(0).setDisplaySize(TILE, TILE).setAlpha(isAlt ? 1 : 0.85);
+        this.add.image(x, y, "floor").setOrigin(0).setDepth(0).setDisplaySize(tileSize, tileSize).setAlpha(isAlt ? 1 : 0.85);
 
-        if (this.isMeetingFloorTile(rooms, row, col)) {
-          this.add.rectangle(x, y, TILE, TILE, COLOR.meetingFloor).setOrigin(0).setDepth(0.5);
+        if (isMeetingFloor) {
+          this.add.rectangle(x, y, tileSize, tileSize, colors.meetingFloor).setOrigin(0).setDepth(0.5);
         }
 
         if (tile === 1) {
-          this.add.rectangle(x, y, TILE, TILE, COLOR.outerWall).setOrigin(0).setDepth(1);
-          this.add.rectangle(x, y, TILE, 4, 0x5a5a7a).setOrigin(0).setDepth(2);
-          this.addWall(x, y);
+          this.add.rectangle(x, y, tileSize, tileSize, colors.outerWall).setOrigin(0).setDepth(1);
+          this.add.rectangle(x, y, tileSize, 4, 0x5a5a7a).setOrigin(0).setDepth(2);
+          this.addWall(x, y, tileSize);
         }
 
         if (tile === 2) {
-          this.addWall(x, y);
+          this.addWall(x, y, tileSize);
         }
 
         if (tile === 3) {
-          this.add.rectangle(x, y, TILE, TILE, COLOR.meetingWall).setOrigin(0).setDepth(1);
-          this.add.rectangle(x, y, TILE, 3, 0x6a6a9a).setOrigin(0).setDepth(2);
-          this.addWall(x, y);
+          this.add.rectangle(x, y, tileSize, tileSize, colors.meetingWall).setOrigin(0).setDepth(1);
+          this.add.rectangle(x, y, tileSize, 3, 0x6a6a9a).setOrigin(0).setDepth(2);
+          this.addWall(x, y, tileSize);
         }
       }
     }
 
-    this.addDecor();
-    this.addRoomLabels(rooms);
+    this.addDecor(template, tileSize);
+    this.addRoomLabels(template, tileSize);
 
     for (let characterIndex = 0; characterIndex < CHARACTER_COUNT; characterIndex += 1) {
       this.anims.create({
@@ -362,7 +313,7 @@ class GameScene extends Phaser.Scene {
       });
     }
 
-    this.player = this.physics.add.sprite(9 * TILE, 5 * TILE, "character");
+    this.player = this.physics.add.sprite(template.spawnX * tileSize, template.spawnY * tileSize, "character");
     this.player.setCollideWorldBounds(true);
     this.player.setDepth(2.8);
     this.player.setScale(1.2);
@@ -432,18 +383,40 @@ class GameScene extends Phaser.Scene {
     this.emitPositions();
   }
 
-  private addDecor() {
-    DECOR_LAYOUT.forEach((item) => {
+  private addDecor(template: TemplateData, tileSize: number) {
+    template.objects.forEach((item) => {
       this.add
-        .image(item.tileX * TILE, item.tileY * TILE, item.key)
+        .image(item.tileX * tileSize, item.tileY * tileSize, item.key)
         .setOrigin(item.originX ?? 0, item.originY ?? 1)
         .setDepth(item.depth ?? DECOR_DEPTH)
         .setDisplaySize(item.width, item.height);
     });
   }
 
-  private addWall(x: number, y: number) {
-    const wall = this.add.rectangle(x + TILE / 2, y + TILE / 2, TILE, TILE, 0x000000, 0);
+  private addRoomLabels(template: TemplateData, tileSize: number) {
+    const labels =
+      template.roomLabels && template.roomLabels.length > 0
+        ? template.roomLabels
+        : template.meetingRooms.map((room) => ({
+            text: room.name,
+            tileX: room.posX + 4,
+            tileY: room.posY + 2.8,
+          }));
+
+    labels.forEach((label) => {
+      this.add
+        .text(label.tileX * tileSize, label.tileY * tileSize, label.text, {
+          fontSize: "11px",
+          color: "#d1d1d6ff",
+          fontFamily: "monospace",
+        })
+        .setOrigin(0.5)
+        .setDepth(3);
+    });
+  }
+
+  private addWall(x: number, y: number, tileSize: number) {
+    const wall = this.add.rectangle(x + tileSize / 2, y + tileSize / 2, tileSize, tileSize, 0x000000, 0);
     this.physics.add.existing(wall, true);
     this.wallGroup.add(wall);
   }
@@ -550,6 +523,7 @@ export default function PhaserGame({ roomId, mapData, onPositionsChange }: Phase
           game.registry.set("avatars", mapData.avatars);
           game.registry.set("currentUserId", mapData.currentUserId);
           game.registry.set("emitPositions", onPositionsChange);
+          game.registry.set("templateId", "modern-office");
         },
       },
     });
@@ -561,4 +535,8 @@ export default function PhaserGame({ roomId, mapData, onPositionsChange }: Phase
   }, [mapData, onPositionsChange, roomId]);
 
   return <div id="game-container" className="h-screen w-full" />;
+}
+
+function parseColor(value: string) {
+  return Number.parseInt(value.replace(/^0x/i, ""), 16);
 }

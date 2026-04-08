@@ -1,0 +1,69 @@
+{
+  "id": "modern-office",
+  "name": "Modern Office",
+  "cols": 20,
+  "rows": 17,
+  "spawnX": 9,
+  "spawnY": 5,
+  "tileSize": 48,
+  "tileGrid": [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,3,3,3,3,3,3,3,0,0,0,0,3,3,3,3,3,3,3,1],
+    [1,3,0,0,0,0,0,3,0,0,0,0,3,0,0,0,0,0,3,1],
+    [1,3,0,0,0,0,0,3,0,0,0,0,3,0,0,0,0,0,3,1],
+    [1,3,0,0,0,0,0,3,0,0,0,0,3,0,0,0,0,0,3,1],
+    [1,3,0,0,0,0,0,3,0,0,0,0,3,0,0,0,0,0,3,1],
+    [1,3,3,3,0,3,3,3,0,0,0,0,3,3,3,0,3,3,3,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+  ],
+  "meetingRooms": [
+    { "posX": 1, "posY": 6, "name": "War Room" },
+    { "posX": 12, "posY": 6, "name": "Focus Room" }
+  ],
+  "objects": [
+    { "key": "AC", "tileX": 1.4, "tileY": 0.9, "width": 72, "height": 39, "depth": 3.5, "originX": 0, "originY": 1 },
+    { "key": "desk1", "tileX": 1.1, "tileY": 5.25, "width": 192, "height": 129, "depth": 3.5, "originX": 0, "originY": 1 },
+    { "key": "desk", "tileX": 15.1, "tileY": 5.2, "width": 192, "height": 129, "depth": 3.5, "originX": 0, "originY": 1 },
+    { "key": "whiteboard", "tileX": 14.7, "tileY": 7.0, "width": 66, "height": 47, "depth": 2.8, "originX": 0, "originY": 1 },
+    { "key": "sofachair", "tileX": 5.0, "tileY": 8.2, "width": 62, "height": 67, "depth": 3.5, "originX": 0, "originY": 1 },
+    { "key": "sofachair", "tileX": 6.0, "tileY": 8.2, "width": 62, "height": 67, "depth": 3.5, "originX": 0, "originY": 1 },
+    { "key": "printer", "tileX": 17.6, "tileY": 3.6, "width": 64, "height": 50, "depth": 3.5, "originX": 0, "originY": 1 },
+    { "key": "shelves", "tileX": 13.2, "tileY": 2.3, "width": 115, "height": 96, "depth": 3.5, "originX": 0, "originY": 1 },
+    { "key": "storage", "tileX": 4.4, "tileY": 2.5, "width": 120, "height": 129, "depth": 3.5, "originX": 0, "originY": 1 },
+    { "key": "vending", "tileX": 5.8, "tileY": 12.4, "width": 81, "height": 124, "depth": 2.7, "originX": 0, "originY": 1 },
+    { "key": "water", "tileX": 12.2, "tileY": 12.6, "width": 98, "height": 151, "depth": 2.7, "originX": 0, "originY": 1 },
+    { "key": "plant1", "tileX": 3.1, "tileY": 1.55, "width": 50, "height": 93, "depth": 3.5, "originX": 0, "originY": 1 },
+    { "key": "plant1", "tileX": 1.0, "tileY": 16.1, "width": 50, "height": 93, "depth": 3.5, "originX": 0, "originY": 1 },
+    { "key": "plant1", "tileX": 17.9, "tileY": 16.1, "width": 50, "height": 93, "depth": 3.5, "originX": 0, "originY": 1 },
+    { "key": "plant2", "tileX": 17.6, "tileY": 2.3, "width": 77, "height": 81, "depth": 3.5, "originX": 0, "originY": 1 },
+    { "key": "splant1", "tileX": 4.9, "tileY": 12.5, "width": 38, "height": 38, "depth": 3.1, "originX": 0, "originY": 1 },
+    { "key": "splant2", "tileX": 14.1, "tileY": 12.5, "width": 43, "height": 38, "depth": 3.1, "originX": 0, "originY": 1 },
+    { "key": "chairs", "tileX": 0.9, "tileY": 12.5, "width": 153, "height": 100, "depth": 2.7, "originX": 0, "originY": 1 },
+    { "key": "coffemac", "tileX": 8.6 , "tileY": 2.5, "width": 144, "height": 120, "depth": 3.1, "originX": 0, "originY": 1 },
+    { "key": "monitor", "tileX": 16.1, "tileY": 3.2, "width": 76, "height": 62, "depth": 4.1, "originX": 0, "originY": 1 },
+    { "key": "chair1", "tileX": 1.3, "tileY": 2.8, "width": 86, "height": 86, "depth": 2.7, "originX": 0, "originY": 1 },
+    { "key": "keyboardmouse", "tileX": 16.2, "tileY": 3.74, "width": 77, "height": 28, "depth": 4.1, "originX": 0, "originY": 1 },
+    { "key": "back-chair", "tileX": 16.2, "tileY": 5.0, "width": 77, "height": 82, "depth": 4.1, "originX": 0, "originY": 1 }
+
+  ],
+  "roomLabels": [
+    { "text": "War Room", "tileX": 7.3, "tileY": 11.8 },
+    { "text": "Focus Room", "tileX": 18, "tileY": 11.8 }
+  ],
+  "colors": {
+    "floor": "0x4a4a6a",
+    "floorAlt": "0x424260",
+    "outerWall": "0xb4ada3",
+    "meetingWall": "0x9f9792",
+    "meetingFloor": "0xb6aba0"
+  }
+}
