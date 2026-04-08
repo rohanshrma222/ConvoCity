@@ -78,9 +78,13 @@ function walkFrames(characterIndex: number, direction: "down" | "left" | "right"
   return [base + 1, base, base + 1, base + 2];
 }
 
-function animationKey(characterIndex: number, direction: "down" | "left" | "right" | "up" | "idle") {
-  return direction === "idle"
-    ? `character-${characterIndex}-idle`
+function animationKey(
+  characterIndex: number,
+  direction: "down" | "left" | "right" | "up",
+  state: "idle" | "walk" = "walk",
+) {
+  return state === "idle"
+    ? `character-${characterIndex}-idle-${direction}`
     : `character-${characterIndex}-walk-${direction}`;
 }
 
@@ -151,6 +155,7 @@ class GameScene extends Phaser.Scene {
   private wallGroup!: Phaser.Physics.Arcade.StaticGroup;
   private avatarLookup: Record<string, AvatarState> = {};
   private currentAvatar: AvatarState | null = null;
+  private lastDirection: "down" | "left" | "right" | "up" = "down";
 
   constructor() {
     super({ key: "GameScene" });
@@ -309,8 +314,26 @@ class GameScene extends Phaser.Scene {
         repeat: -1,
       });
       this.anims.create({
-        key: animationKey(characterIndex, "idle"),
-        frames: [{ key: "character", frame: idleFrame(characterIndex) }],
+        key: animationKey(characterIndex, "down", "idle"),
+        frames: [{ key: "character", frame: idleFrame(characterIndex, "down") }],
+        frameRate: 1,
+        repeat: 0,
+      });
+      this.anims.create({
+        key: animationKey(characterIndex, "left", "idle"),
+        frames: [{ key: "character", frame: idleFrame(characterIndex, "left") }],
+        frameRate: 1,
+        repeat: 0,
+      });
+      this.anims.create({
+        key: animationKey(characterIndex, "right", "idle"),
+        frames: [{ key: "character", frame: idleFrame(characterIndex, "right") }],
+        frameRate: 1,
+        repeat: 0,
+      });
+      this.anims.create({
+        key: animationKey(characterIndex, "up", "idle"),
+        frames: [{ key: "character", frame: idleFrame(characterIndex, "up") }],
         frameRate: 1,
         repeat: 0,
       });
@@ -319,8 +342,8 @@ class GameScene extends Phaser.Scene {
     this.player = this.physics.add.sprite(template.spawnX * tileSize, template.spawnY * tileSize, "character");
     this.player.setCollideWorldBounds(true);
     this.player.setDepth(2.8);
-    this.player.setScale(1.2);
-    this.player.play(animationKey(normalizeCharacterId(this.currentAvatar?.skinTone), "idle"));
+    this.player.setScale(0.9);
+    this.player.play(animationKey(normalizeCharacterId(this.currentAvatar?.skinTone), this.lastDirection, "idle"));
     this.player.setSize(24, 40);
     this.player.setOffset(12, 12);
 
@@ -370,9 +393,9 @@ class GameScene extends Phaser.Scene {
       if (other) {
         other.setPosition(x, y);
         const characterIndex = normalizeCharacterId(characterId);
-        const direction =
-          anim === "idle" ? "idle" : (anim.replace("walk-", "") as "down" | "left" | "right" | "up");
-        other.play(animationKey(characterIndex, direction), true);
+        const [state, directionRaw] = anim.split("-");
+        const direction = (directionRaw as "down" | "left" | "right" | "up") || "down";
+        other.play(animationKey(characterIndex, direction, state === "idle" ? "idle" : "walk"), true);
         this.emitPositions();
       }
     });
@@ -425,7 +448,7 @@ class GameScene extends Phaser.Scene {
   }
 
   addOtherPlayer(player: SocketPlayer) {
-    const sprite = this.add.sprite(player.x, player.y, "character").setDepth(5).setScale(1.2);
+    const sprite = this.add.sprite(player.x, player.y, "character").setDepth(5).setScale(0.9);
     sprite.setData("userId", player.userId);
     sprite.play(animationKey(normalizeCharacterId(player.characterId), "idle"));
     this.otherPlayers[player.id] = sprite;
@@ -443,29 +466,33 @@ class GameScene extends Phaser.Scene {
     const characterId = this.currentAvatar?.skinTone ?? "character-1";
     const characterIndex = normalizeCharacterId(characterId);
     let moving = false;
-    let currentAnim = animationKey(characterIndex, "idle");
+    let currentAnim = `idle-${this.lastDirection}`;
 
     if (left) {
       this.player.setVelocityX(-speed);
       this.player.play(animationKey(characterIndex, "left"), true);
-      currentAnim = animationKey(characterIndex, "left");
+      this.lastDirection = "left";
+      currentAnim = "walk-left";
       moving = true;
     } else if (right) {
       this.player.setVelocityX(speed);
       this.player.play(animationKey(characterIndex, "right"), true);
-      currentAnim = animationKey(characterIndex, "right");
+      this.lastDirection = "right";
+      currentAnim = "walk-right";
       moving = true;
     }
 
     if (up) {
       this.player.setVelocityY(-speed);
       this.player.play(animationKey(characterIndex, "up"), true);
-      currentAnim = animationKey(characterIndex, "up");
+      this.lastDirection = "up";
+      currentAnim = "walk-up";
       moving = true;
     } else if (down) {
       this.player.setVelocityY(speed);
       this.player.play(animationKey(characterIndex, "down"), true);
-      currentAnim = animationKey(characterIndex, "down");
+      this.lastDirection = "down";
+      currentAnim = "walk-down";
       moving = true;
     }
 
@@ -474,8 +501,8 @@ class GameScene extends Phaser.Scene {
     }
 
     if (!moving) {
-      this.player.play(animationKey(characterIndex, "idle"), true);
-      currentAnim = animationKey(characterIndex, "idle");
+      this.player.play(animationKey(characterIndex, this.lastDirection, "idle"), true);
+      currentAnim = `idle-${this.lastDirection}`;
     }
 
     this.socket?.emit("player:move", {

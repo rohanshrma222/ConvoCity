@@ -26,14 +26,14 @@
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
   ],
   "meetingRooms": [
-    { "posX": 1, "posY": 6, "name": "War Room" },
+    { "posX": 1, "posY": 6, "name": "Meet Room" },
     { "posX": 12, "posY": 6, "name": "Focus Room" }
   ],
   "objects": [
     { "key": "AC", "tileX": 1.4, "tileY": 0.9, "width": 72, "height": 39, "depth": 3.5, "originX": 0, "originY": 1 },
     { "key": "desk1", "tileX": 1.1, "tileY": 5.25, "width": 192, "height": 129, "depth": 3.5, "originX": 0, "originY": 1 },
     { "key": "desk", "tileX": 15.1, "tileY": 5.2, "width": 192, "height": 129, "depth": 3.5, "originX": 0, "originY": 1 },
-    { "key": "whiteboard", "tileX": 14.7, "tileY": 7.0, "width": 66, "height": 47, "depth": 2.8, "originX": 0, "originY": 1 },
+    { "key": "whiteboard", "tileX": 14.7, "tileY": 6.9, "width": 56, "height": 37, "depth": 2.8, "originX": 0, "originY": 1 },
     { "key": "printer", "tileX": 17.6, "tileY": 3.6, "width": 64, "height": 50, "depth": 3.5, "originX": 0, "originY": 1 },
     { "key": "shelves", "tileX": 13.2, "tileY": 2.3, "width": 115, "height": 96, "depth": 3.5, "originX": 0, "originY": 1 },
     { "key": "storage", "tileX": 4.4, "tileY": 2.5, "width": 120, "height": 129, "depth": 3.5, "originX": 0, "originY": 1 },
@@ -63,8 +63,8 @@
 
   ],
   "roomLabels": [
-    { "text": "War Room", "tileX": 7.3, "tileY": 11.8 },
-    { "text": "Focus Room", "tileX": 18, "tileY": 11.8 }
+    { "text": "Meet Room", "tileX": 4.5, "tileY": 12.8 },
+    { "text": "Focus Room", "tileX": 15.5, "tileY": 12.8 }
   ],
   "colors": {
     "floor": "0x4a4a6a",
