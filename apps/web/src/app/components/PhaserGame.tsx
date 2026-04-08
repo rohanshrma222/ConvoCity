@@ -32,7 +32,10 @@ const DECOR_ASSETS = [
   "keyboardmouse",
   "back-chair",
   "desk1",
-  "AC"
+  "AC",
+  "conf-table",
+  "private-chair",
+  "private-chair-R"
 ] as const;
 
 type DecorItem = {
