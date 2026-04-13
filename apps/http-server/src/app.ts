@@ -5,10 +5,11 @@ import { router as v1Router } from "./routes/v1/index.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 const app: Express = express();
+const webUrl = (process.env.WEB_URL || "http://localhost:3000").replace(/\/+$/, "");
 
 app.use(
   cors({
-    origin: process.env.WEB_URL || "http://localhost:3000",
+    origin: webUrl,
     credentials: true,
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
