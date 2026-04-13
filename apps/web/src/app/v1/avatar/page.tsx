@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { Suspense, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api";
@@ -34,7 +34,7 @@ function NavBar({ onBack }: { onBack: () => void }) {
   );
 }
 
-export default function AvatarPage() {
+function AvatarPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -255,6 +255,35 @@ export default function AvatarPage() {
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
               </button>
             </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default function AvatarPage() {
+  return (
+    <Suspense fallback={<AvatarPageFallback />}>
+      <AvatarPageContent />
+    </Suspense>
+  );
+}
+
+function AvatarPageFallback() {
+  return (
+    <div className="h-screen overflow-hidden bg-[#f4f5f9] font-sans text-[#1c1c1e]">
+      <NavBar onBack={() => undefined} />
+      <main className="mx-auto mt-2 grid h-[calc(100vh-56px)] w-full max-w-[1500px] grid-cols-1 gap-6 px-4 pb-8 md:px-10 lg:grid-cols-[45%_55%]">
+        <div className="flex flex-col gap-4">
+          <div className="flex-1 animate-pulse rounded-[36px] bg-gray-200" />
+          <div className="h-28 animate-pulse rounded-[36px] bg-white" />
+        </div>
+        <div className="flex h-full flex-col gap-6 rounded-[36px] bg-white p-8 shadow-[0_8px_32px_rgba(0,0,0,0.03)]">
+          <div className="h-14 w-full rounded-3xl bg-gray-100" />
+          <div className="h-10 w-1/3 rounded-lg bg-gray-100" />
+          <div className="grid grid-cols-4 gap-5">
+            {Array.from({ length: 8 }).map((_, i) => <div key={i} className="aspect-square rounded-[28px] bg-gray-100" />)}
           </div>
         </div>
       </main>
