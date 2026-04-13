@@ -35,14 +35,14 @@ const BANNERS = [
     id: "b1",
     tag: "REMOTE",
     title: "Work from Anywhere",
-    gradient: "linear-gradient(145deg,#1a0833 0%,#2d1155 40%,#d63fa3 100%)",
+    image: "/space/space1.png",
     accent: "#d63fa3",
   },
   {
     id: "b2",
     tag: "STUDY",
     title: "Study Room Open 24/7",
-    gradient: "linear-gradient(145deg,#c8a96e 0%,#e8d5b7 50%,#f5efe6 100%)",
+    image: "/space/space2.png",
     accent: "#7c6248",
     dark: false,
   },
@@ -50,7 +50,7 @@ const BANNERS = [
     id: "b3",
     tag: "MEETING",
     title: "Meeting Room",
-    gradient: "linear-gradient(145deg,#3a0ca3 0%,#560bad 60%,#7209b7 100%)",
+    image: "/space/space3.png",
     accent: "#a855f7",
   },
 ];
@@ -94,11 +94,23 @@ function BannerCarousel() {
               className="relative h-[210px] min-w-0 cursor-pointer overflow-hidden rounded-[18px]"
               style={{
                 flex: isActive ? "2 0 0" : "1 0 0",
-                background: b.gradient,
                 transition: "flex 0.4s cubic-bezier(0.23,1,0.32,1), opacity 0.3s",
                 opacity: isActive ? 1 : 0.72,
               }}
             >
+              <img
+                src={b.image}
+                alt={b.title}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: b.dark === false
+                    ? "linear-gradient(180deg,rgba(255,255,255,0.05) 0%,rgba(43,31,17,0.22) 100%)"
+                    : "linear-gradient(180deg,rgba(8,8,20,0.12) 0%,rgba(8,8,20,0.42) 100%)",
+                }}
+              />
               <span
                 className="absolute left-3.5 top-3.5 rounded-[20px] bg-white/18 px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] backdrop-blur-[6px]"
                 style={{ color: b.dark ? "#3a2a10" : "#fff" }}

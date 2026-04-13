@@ -44,6 +44,8 @@ const TEMPLATE_META: Record<string, { badge: string; badgeColor: string; desc: s
   },
 };
 
+const AVAILABLE_TEMPLATE_NAMES = new Set(["Open Office"]);
+
 function getTemplateMeta(name: string) {
   return TEMPLATE_META[name] ?? {
     badge: "SPACE",
@@ -200,7 +202,11 @@ export default function CreatePage() {
             <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6">
               {templates.map((template) => {
                 const meta = getTemplateMeta(template.name);
-                const imgSrc = template.previewImageUrl ?? template.thumbnail ?? templatePreviewSvg(template.name);
+                const isAvailable = AVAILABLE_TEMPLATE_NAMES.has(template.name);
+                const imgSrc =
+                  template.name === "Open Office"
+                    ? "/template/office.png"
+                    : template.previewImageUrl ?? template.thumbnail ?? templatePreviewSvg(template.name);
                 return (
                   <div
                     key={template.id}
@@ -208,9 +214,12 @@ export default function CreatePage() {
                   >
                     <div className="relative h-[220px] overflow-hidden">
                       <div className="absolute inset-0" style={{ background: meta.gradient }} />
-                      {(template.previewImageUrl || template.thumbnail) && (
+                      {(template.previewImageUrl || template.thumbnail || template.name === "Open Office") && (
                         <Image alt={template.name} src={imgSrc} fill unoptimized className="object-cover" priority={false} />
                       )}
+                      {!isAvailable ? (
+                        <div className="absolute inset-0 bg-[rgba(17,17,24,0.32)]" />
+                      ) : null}
                       <span
                         className="absolute bottom-3.5 left-3.5 rounded-[20px] px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] text-[#1a1a1a]"
                         style={{ background: meta.badgeColor }}
@@ -223,10 +232,19 @@ export default function CreatePage() {
                       <h3 className="mb-2 text-xl font-bold text-[#531f96]">{template.name}</h3>
                       <p className="mb-5 flex-1 text-sm leading-[1.65] text-[#666]">{meta.desc}</p>
                       <button
-                        onClick={() => openTemplate(template)}
-                        className="w-full rounded-[14px] bg-[#531f96] p-[13px] text-[15px] font-semibold text-white transition-colors duration-150 ease-out hover:bg-[#431482]"
+                        onClick={() => {
+                          if (isAvailable) {
+                            openTemplate(template);
+                          }
+                        }}
+                        disabled={!isAvailable}
+                        className={`w-full rounded-[14px] p-[13px] text-[15px] font-semibold transition-colors duration-150 ease-out ${
+                          isAvailable
+                            ? "bg-[#531f96] text-white hover:bg-[#431482]"
+                            : "cursor-not-allowed bg-[#efedf8] text-[#8b86a3]"
+                        }`}
                       >
-                        Select Template
+                        {isAvailable ? "Select Template" : "Will be added soon"}
                       </button>
                     </div>
                   </div>
