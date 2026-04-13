@@ -36,7 +36,7 @@ function ActiveNowChip() {
       <span className="block h-2 w-2 rounded-full bg-[#81C784] shadow-[0_0_0_3px_#E8F5E9]" />
       <div>
         <p className="m-0 text-[9px] font-bold leading-none tracking-[0.08em] text-[#6B6B8A]">ACTIVE NOW</p>
-        <p className="m-0 text-xs font-semibold leading-[1.4] text-[#1A1A2E]">Design Sprint</p>
+        <p className="m-0 text-xs font-semibold leading-[1.4] text-[#1A1A2E]">Sprint</p>
       </div>
     </div>
   );
@@ -323,15 +323,14 @@ export default function DashboardPage() {
                 </div>
 
                 <h1 className="m-0 mb-5 text-[clamp(36px,5vw,58px)] font-black leading-[1.08] tracking-[-1.5px] text-[#1A1A2E]">
-                  The world is
+                  The office is
                   <br />
-                  your <em className="italic text-[#4A148C]">studio</em>
+                  wherever your <em className="italic text-[#4A148C]">team is</em>
                   <span className="text-[#4A148C]">.</span>
                 </h1>
 
                 <p className="m-0 mb-10 max-w-[440px] text-base leading-[1.7] text-[#6B6B8A]">
-                  Connect with your team in high-fidelity environments. Beyond rectangles, walk, talk, and
-                  create in a fluid architect&apos;s dream.
+                  Connect with your team in shared virtual spaces. Move, talk, and collaborate naturally.
                 </p>
 
                 <div className="flex items-center gap-4">
@@ -450,7 +449,7 @@ export default function DashboardPage() {
               <div className="rounded-[38px] bg-gradient-to-r from-[#7645be] via-[#8f62e8] to-[#ae83ff] px-8 py-20 shadow-[0_24px_60px_rgba(128,82,208,0.18)] sm:px-12 lg:px-20">
                 <div className="mx-auto max-w-[780px] text-center">
                   <h2 className="text-[44px] font-bold leading-[0.95] tracking-[-0.07em] text-white sm:text-[64px]">
-                    Ready to occupy your new studio?
+                    Ready to occupy your new World?
                   </h2>
                   <p className="mx-auto mt-8 max-w-[620px] text-[17px] leading-[1.5] text-white/72 sm:text-[18px]">
                     Join the waitlist or start your 14-day pro trial today. No credit card required to start explore the
