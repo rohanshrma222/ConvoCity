@@ -171,12 +171,10 @@ export default function GameCanvas({ roomId }: GameCanvasProps) {
       return;
     }
 
-    const payload = `Join ${spaceMeta.name}\nEntry Code: ${spaceMeta.inviteCode}\nLink: ${inviteLink}`;
-
     try {
-      await navigator.clipboard.writeText(payload);
+      await navigator.clipboard.writeText(inviteLink);
       toast({
-        title: "Invite info copied",
+        title: "Invite link copied",
         variant: "success",
       });
     } catch {
