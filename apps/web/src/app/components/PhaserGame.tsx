@@ -450,7 +450,7 @@ class GameScene extends Phaser.Scene {
   addOtherPlayer(player: SocketPlayer) {
     const sprite = this.add.sprite(player.x, player.y, "character").setDepth(4.5).setScale(0.9);
     sprite.setData("userId", player.userId);
-    sprite.play(animationKey(normalizeCharacterId(player.characterId), "idle"));
+    sprite.play(animationKey(normalizeCharacterId(player.characterId), "down", "idle"));
     this.otherPlayers[player.id] = sprite;
   }
 
