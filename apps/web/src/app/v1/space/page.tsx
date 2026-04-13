@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -207,7 +207,7 @@ function SkeletonCard() {
   );
 }
 
-export default function SpaceDashboardPage() {
+function SpaceDashboardPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -465,5 +465,39 @@ export default function SpaceDashboardPage() {
         </Dialog>
       </main>
     </>
+  );
+}
+
+export default function SpaceDashboardPage() {
+  return (
+    <Suspense fallback={<SpaceDashboardFallback />}>
+      <SpaceDashboardPageContent />
+    </Suspense>
+  );
+}
+
+function SpaceDashboardFallback() {
+  return (
+    <main className="relative min-h-screen overflow-hidden bg-[#f4f5f9] text-[#1a1a2e]">
+      <NavBar />
+
+      <div className="relative z-1 px-6 pt-6">
+        <div className="mb-7 h-[230px] animate-pulse rounded-[18px] bg-[#e7e2fb]" />
+      </div>
+
+      <div className="relative z-1 mx-auto max-w-[960px] px-6">
+        <div className="mb-5 rounded-[28px] border border-white/72 bg-white/68 p-4 shadow-[0_18px_48px_rgba(83,31,150,0.08)] backdrop-blur-[16px]">
+          <div className="h-12 animate-pulse rounded-[22px] bg-[#ece8fb]" />
+        </div>
+
+        <div className="min-h-[220px] rounded-[32px] border border-white/82 bg-white/78 p-6 shadow-[0_18px_48px_rgba(83,31,150,0.08)] backdrop-blur-[16px]">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </main>
   );
 }
