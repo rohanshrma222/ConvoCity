@@ -3,7 +3,7 @@
 import { createAuthClient } from "better-auth/react";
 
 export const authClient: any = createAuthClient({
-  baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3002",
+  baseURL: process.env.NEXT_PUBLIC_AUTH_URL ?? "http://localhost:3002",
 });
 
 // All of these are safe to destructure — signIn/signUp/signOut are async
