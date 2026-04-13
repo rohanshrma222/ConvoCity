@@ -233,16 +233,6 @@ export default function DashboardPage() {
     router.replace("/sign-in");
   }
 
-  if (isPending) {
-    return (
-      <main className="grid min-h-screen place-items-center bg-[#F5F4F8]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-[#EDE7F6] border-t-[#4A148C]" />
-          <p className="text-sm text-[#6B6B8A]">Loading your space...</p>
-        </div>
-      </main>
-    );
-  }
 
   const user = session?.user;
 

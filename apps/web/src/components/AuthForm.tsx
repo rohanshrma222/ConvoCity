@@ -77,31 +77,31 @@ export default function AuthForm({ mode }: AuthFormProps) {
   }
 
   return (
-    <main className="min-h-screen grid place-items-center px-4 py-8"
-      style={{
-        background: "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(108,99,255,0.18) 0%, transparent 60%), #080910",
-      }}
-    >
-      <div className="w-full max-w-[420px]">
+    <main className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#F5F4F8] font-sans text-[#1A1A2E] px-4 py-8">
+      {/* Background blobs to match dashboard */}
+      <div aria-hidden="true" className="absolute inset-0 pointer-events-none flex justify-center items-center overflow-hidden">
+        <div className="absolute -left-[10%] top-[10%] h-[500px] w-[500px] rounded-full bg-[#B39DDB]/30 blur-[100px]" />
+        <div className="absolute right-[5%] bottom-[10%] h-[420px] w-[420px] rounded-full bg-[#81C784]/15 blur-[90px]" />
+        <div className="absolute right-[20%] top-[20%] h-[300px] w-[300px] rounded-full bg-[#4A148C]/10 blur-[80px]" />
+      </div>
 
-        {/* Logo */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-9 h-9 rounded-xl bg-[#6c63ff] grid place-items-center text-lg shadow-[0_0_24px_rgba(108,99,255,0.4)]">
-            🏙️
-          </div>
-          <span className="text-[17px] font-semibold tracking-tight text-[#f0f2ff]">PoCity</span>
-        </div>
+      <div className="w-full max-w-[440px] relative z-10">
 
         {/* Card */}
-        <div className="bg-[#0e1018] border border-white/[0.07] rounded-2xl px-9 py-10 shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
+        <div className="bg-white/90 backdrop-blur-xl border border-white rounded-[32px] px-10 py-12 shadow-[0_18px_45px_rgba(17,24,39,0.04)]">
+          {/* Logo */}
+          <div className="flex items-center gap-2 mb-8 cursor-pointer" onClick={() => router.push("/")}>
+            <span className="text-[20px] font-extrabold tracking-[-0.5px] text-[#4A148C]">ConvoCity</span>
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#388E3C]" />
+          </div>
 
-          <h1 className="text-2xl font-bold tracking-tight text-[#f0f2ff] mb-1">
-            {isSignup ? "Create an account" : "Welcome back"}
+          <h1 className="text-3xl font-bold tracking-tight text-[#1A1A2E] mb-2 leading-tight">
+            {isSignup ? "Create your space" : "Welcome back"}
           </h1>
-          <p className="text-sm text-[#8b92b8] mb-7">
+          <p className="text-[15px] leading-snug text-[#6B6B8A] mb-8">
             {isSignup
-              ? "Join PoCity and start exploring."
-              : "Sign in to continue to PoCity."}
+              ? "Join your team and redefine your presence."
+              : "Sign in to keep exploring the boundaries of remote work."}
           </p>
 
           {/* Google button */}
@@ -109,26 +109,26 @@ export default function AuthForm({ mode }: AuthFormProps) {
             id="btn-google-auth"
             onClick={handleGoogle}
             disabled={googleLoading || loading}
-            className="w-full flex items-center justify-center gap-2.5 h-11 bg-white text-[#1f1f1f] rounded-xl text-sm font-medium cursor-pointer transition-all duration-150 shadow-sm hover:bg-[#f5f5f5] hover:shadow-md hover:-translate-y-px active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+            className="w-full flex items-center justify-center gap-3 h-[46px] bg-white border border-[#ececef] text-[#1A1A2E] rounded-2xl text-[15px] font-semibold cursor-pointer transition-all duration-200 shadow-sm hover:border-[#4A148C]/20 hover:bg-[#fcfcff] hover:shadow-[0_4px_12px_rgba(74,20,140,0.05)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
           >
             {googleLoading ? <Spinner /> : <GoogleIcon />}
             <span>{isSignup ? "Continue with Google" : "Sign in with Google"}</span>
           </button>
 
           {/* Divider */}
-          <div className="flex items-center gap-3 my-5">
-            <div className="flex-1 h-px bg-white/[0.06]" />
-            <span className="text-[11px] font-medium tracking-widest uppercase text-[#4a5080]">or</span>
-            <div className="flex-1 h-px bg-white/[0.06]" />
+          <div className="flex items-center gap-3 my-7">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent to-[#e8e9ec]" />
+            <span className="text-[11px] font-bold tracking-widest uppercase text-[#9aa1bc]">or</span>
+            <div className="flex-1 h-px bg-gradient-to-l from-transparent to-[#e8e9ec]" />
           </div>
 
           {/* Error banner */}
           {error && (
-            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5 mb-4 text-[13px] text-red-300">
-              <svg className="w-4 h-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+            <div className="flex items-start gap-2.5 bg-[#fff7f6] border border-[#f3d4d2] rounded-2xl px-4 py-3.5 mb-6 text-[14px] text-[#ea4335] shadow-sm">
+              <svg className="w-[18px] h-[18px] shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
-              {error}
+              <div className="leading-snug">{error}</div>
             </div>
           )}
 
@@ -136,7 +136,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignup && (
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="name" className="text-[13px] font-medium text-[#8b92b8]">Full name</label>
+                <label htmlFor="name" className="text-[13px] font-semibold text-[#1A1A2E] ml-1">Full name</label>
                 <input
                   id="name"
                   type="text"
@@ -144,14 +144,14 @@ export default function AuthForm({ mode }: AuthFormProps) {
                   required
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  placeholder="Alex Chen"
-                  className="h-11 px-3.5 bg-[#141620] border border-white/10 rounded-xl text-sm text-[#f0f2ff] placeholder:text-[#4a5080] outline-none transition-all duration-150 focus:border-[#6c63ff] focus:ring-[3px] focus:ring-[rgba(108,99,255,0.25)]"
+                  placeholder="Design Guru"
+                  className="h-12 px-4 bg-[#f4f5f8] border border-transparent rounded-2xl text-[15px] text-[#1A1A2E] placeholder:text-[#9aa1bc] outline-none transition-all duration-200 focus:bg-white focus:border-[#B39DDB] focus:ring-[3px] focus:ring-[#EDE7F6] focus:shadow-sm"
                 />
               </div>
             )}
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="email" className="text-[13px] font-medium text-[#8b92b8]">Email address</label>
+              <label htmlFor="email" className="text-[13px] font-semibold text-[#1A1A2E] ml-1">Email address</label>
               <input
                 id="email"
                 type="email"
@@ -159,16 +159,16 @@ export default function AuthForm({ mode }: AuthFormProps) {
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="h-11 px-3.5 bg-[#141620] border border-white/10 rounded-xl text-sm text-[#f0f2ff] placeholder:text-[#4a5080] outline-none transition-all duration-150 focus:border-[#6c63ff] focus:ring-[3px] focus:ring-[rgba(108,99,255,0.25)]"
+                placeholder="studio@example.com"
+                className="h-12 px-4 bg-[#f4f5f8] border border-transparent rounded-2xl text-[15px] text-[#1A1A2E] placeholder:text-[#9aa1bc] outline-none transition-all duration-200 focus:bg-white focus:border-[#B39DDB] focus:ring-[3px] focus:ring-[#EDE7F6] focus:shadow-sm"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <label htmlFor="password" className="text-[13px] font-medium text-[#8b92b8]">Password</label>
+              <div className="flex items-center justify-between ml-1 mr-1">
+                <label htmlFor="password" className="text-[13px] font-semibold text-[#1A1A2E]">Password</label>
                 {!isSignup && (
-                  <Link href="/forgot-password" className="text-[12px] text-[#4a5080] hover:text-[#6c63ff] transition-colors">
+                  <Link href="/forgot-password" className="text-[12px] font-medium text-[#7042b3] hover:text-[#4A148C] transition-colors">
                     Forgot password?
                   </Link>
                 )}
@@ -182,7 +182,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="h-11 px-3.5 bg-[#141620] border border-white/10 rounded-xl text-sm text-[#f0f2ff] placeholder:text-[#4a5080] outline-none transition-all duration-150 focus:border-[#6c63ff] focus:ring-[3px] focus:ring-[rgba(108,99,255,0.25)]"
+                className="h-12 px-4 bg-[#f4f5f8] border border-transparent rounded-2xl text-[15px] text-[#1A1A2E] placeholder:text-[#9aa1bc] outline-none transition-all duration-200 focus:bg-white focus:border-[#B39DDB] focus:ring-[3px] focus:ring-[#EDE7F6] focus:shadow-sm"
               />
             </div>
 
@@ -190,24 +190,26 @@ export default function AuthForm({ mode }: AuthFormProps) {
               id={isSignup ? "btn-signup-submit" : "btn-signin-submit"}
               type="submit"
               disabled={loading || googleLoading}
-              className="w-full h-11 mt-1 flex items-center justify-center gap-2 bg-[#6c63ff] text-white rounded-xl text-sm font-semibold cursor-pointer transition-all duration-150 shadow-[0_2px_12px_rgba(108,99,255,0.35)] hover:bg-[#7a72ff] hover:shadow-[0_4px_20px_rgba(108,99,255,0.45)] hover:-translate-y-px active:translate-y-0 disabled:opacity-55 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+              className="w-full h-12 mt-5 flex items-center justify-center gap-2 bg-[#7042b3] text-white rounded-2xl text-[15px] font-bold cursor-pointer transition-all duration-200 shadow-[0_6px_20px_rgba(74,20,140,0.25)] hover:bg-[#6434a6] hover:shadow-[0_8px_25px_rgba(74,20,140,0.35)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-55 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
             >
               {loading ? <Spinner /> : null}
-              {isSignup ? "Create account" : "Sign in"}
+              {isSignup ? "Create Account" : "Sign In"}
             </button>
           </form>
 
-          {/* Footer */}
-          <p className="text-center mt-6 text-[13px] text-[#4a5080]">
+        </div>
+        
+        {/* Footer */}
+        <p className="text-center mt-6 text-[14px] font-medium text-[#6B6B8A]">
             {isSignup ? "Already have an account? " : "Don't have an account? "}
             <Link
               href={isSignup ? "/sign-in" : "/sign-up"}
-              className="text-[#6c63ff] font-medium hover:text-[#7a72ff] transition-colors"
+              className="text-[#7042b3] font-semibold hover:text-[#4A148C] transition-colors"
             >
               {isSignup ? "Sign in" : "Sign up"}
             </Link>
-          </p>
-        </div>
+        </p>
+
       </div>
     </main>
   );

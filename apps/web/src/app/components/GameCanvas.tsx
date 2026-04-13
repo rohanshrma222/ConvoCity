@@ -218,8 +218,17 @@ export default function GameCanvas({ roomId }: GameCanvasProps) {
 
   if (!mapData || authLoading) {
     return (
-      <div className="grid h-screen w-full place-items-center bg-[#1a1a2e] text-sm text-[#8b92b8]">
-        Loading space...
+      <div className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden bg-[#F5F4F8] font-sans">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="absolute h-[400px] w-[400px] rounded-full bg-[#B39DDB]/20 blur-[90px]" />
+        </div>
+        <div className="z-10 flex flex-col items-center gap-6">
+          <div className="relative flex h-16 w-16 items-center justify-center">
+            <div className="absolute inset-0 animate-spin rounded-full border-[3px] border-[#EDE7F6] border-t-[#7042b3]"></div>
+            <div className="absolute h-8 w-8 animate-pulse rounded-full bg-[#B39DDB]/40"></div>
+          </div>
+          <p className="text-[15px] font-semibold tracking-wide text-[#6B6B8A] animate-pulse">Entering the studio...</p>
+        </div>
       </div>
     );
   }
