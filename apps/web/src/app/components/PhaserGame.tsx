@@ -341,7 +341,7 @@ class GameScene extends Phaser.Scene {
 
     this.player = this.physics.add.sprite(template.spawnX * tileSize, template.spawnY * tileSize, "character");
     this.player.setCollideWorldBounds(true);
-    this.player.setDepth(2.8);
+    this.player.setDepth(4.8);
     this.player.setScale(0.9);
     this.player.play(animationKey(normalizeCharacterId(this.currentAvatar?.skinTone), this.lastDirection, "idle"));
     this.player.setSize(24, 40);
@@ -448,7 +448,7 @@ class GameScene extends Phaser.Scene {
   }
 
   addOtherPlayer(player: SocketPlayer) {
-    const sprite = this.add.sprite(player.x, player.y, "character").setDepth(5).setScale(0.9);
+    const sprite = this.add.sprite(player.x, player.y, "character").setDepth(4.5).setScale(0.9);
     sprite.setData("userId", player.userId);
     sprite.play(animationKey(normalizeCharacterId(player.characterId), "idle"));
     this.otherPlayers[player.id] = sprite;

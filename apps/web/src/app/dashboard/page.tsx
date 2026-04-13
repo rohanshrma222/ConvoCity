@@ -227,10 +227,6 @@ export default function DashboardPage() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
 
-  if (!isPending && !session) {
-    router.replace("/sign-in");
-    return null;
-  }
 
   async function handleSignOut() {
     await signOut();
@@ -297,23 +293,32 @@ export default function DashboardPage() {
 
             <div className="ml-auto flex items-center gap-2.5">
               <button 
-              onClick={() => router.push("/v1/space")}
+              onClick={() => router.push(session ? "/v1/space" : "/sign-in")}
               className="cursor-pointer rounded-[22px] border-[1.5px] border-[#4A148C]/10 bg-transparent px-[18px] py-2 text-sm font-medium text-[#1A1A2E] transition-colors hover:border-[#4A148C]">
                 Join with Code
               </button>
               <button
-                onClick={() => router.push("/v1/space")}
+                onClick={() => router.push(session ? "/v1/space" : "/sign-in")}
                 className="cursor-pointer rounded-[22px] border-none bg-[#7042b3] px-5 py-2 text-sm font-semibold text-white shadow-[0_6px_20px_rgba(74,20,140,0.30)] transition-all hover:bg-[#6434a6]"
               >
                 Create Space
               </button>
-              <button
-                onClick={handleSignOut}
-                title="Sign out"
-                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-[10px] border-[1.5px] border-[#4A148C]/10 bg-[#EDE7F6] text-sm font-bold text-[#4A148C] transition-colors hover:bg-[#B39DDB]"
-              >
-                {user?.name?.charAt(0).toUpperCase() ?? "U"}
-              </button>
+              {session ? (
+                <button
+                  onClick={handleSignOut}
+                  title="Sign out"
+                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-[10px] border-[1.5px] border-[#4A148C]/10 bg-[#EDE7F6] text-sm font-bold text-[#4A148C] transition-colors hover:bg-[#B39DDB]"
+                >
+                  {user?.name?.charAt(0).toUpperCase() ?? "U"}
+                </button>
+              ) : (
+                <button
+                  onClick={() => router.push("/sign-in")}
+                  className="whitespace-nowrap cursor-pointer rounded-[22px] border-[1.5px] border-[#4A148C]/10 bg-transparent px-[18px] py-2 text-sm font-medium text-[#1A1A2E] transition-colors hover:border-[#4A148C]"
+                >
+                  Log In
+                </button>
+              )}
             </div>
           </div>
         </header>
@@ -341,7 +346,7 @@ export default function DashboardPage() {
 
                 <div className="flex items-center gap-4">
                   <button
-                    onClick={() => router.push("/v1/space")}
+                    onClick={() => router.push(session ? "/v1/space" : "/sign-in")}
                     className="cursor-pointer rounded-2xl border-none bg-gradient-to-br from-[#7042b3] to-[#b889ff] px-8 py-3.5 text-[15px] font-bold text-white transition-transform duration-150 ease-out hover:scale-[1.02] active:scale-[0.97] shadow-[0px_0.5px_0px_0px_var(--color-purple-700)_inset,0px_8px_8px_0px_var(--color-neutral-200)] rounded-xl p-4"
                   >
                     Start for Free
