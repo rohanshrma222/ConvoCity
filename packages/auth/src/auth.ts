@@ -5,6 +5,7 @@ import { prisma } from "@repo/db";
 
 const betterAuthUrl = (process.env.BETTER_AUTH_URL || "http://localhost:3002").replace(/\/+$/, "");
 const webUrl = (process.env.WEB_URL || "http://localhost:3000").replace(/\/+$/, "");
+const isProduction = process.env.NODE_ENV === "production";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -23,6 +24,13 @@ export const auth = betterAuth({
     betterAuthUrl,
     webUrl,
   ],
+  advanced: {
+    useSecureCookies: isProduction,
+    defaultCookieAttributes: {
+      sameSite: isProduction ? "none" : "lax",
+      secure: isProduction,
+    },
+  },
 });
 
 export type Session = typeof auth.$Infer.Session;
