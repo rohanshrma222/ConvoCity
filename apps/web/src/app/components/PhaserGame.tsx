@@ -7,6 +7,7 @@ import type { MapRoom } from "./GameCanvas";
 
 const TILE = 48;
 const DECOR_DEPTH = 3.5;
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL ?? "http://localhost:3001";
 
 const CHAR_FRAME_W = 48;
 const CHAR_FRAME_H = 96;
@@ -362,7 +363,7 @@ class GameScene extends Phaser.Scene {
     this.cameras.main.setZoom(1.4);
     this.physics.world.setBounds(0, 0, mapW, mapH);
 
-    this.socket = io("http://localhost:3001");
+    this.socket = io(SOCKET_URL);
 
     this.socket.emit("player:join", {
       userId: currentUserId,
