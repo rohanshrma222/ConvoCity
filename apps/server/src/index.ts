@@ -5,8 +5,9 @@ import { Server } from "socket.io";
 
 const app = express();
 const httpServer = createServer(app);
+const port = Number(process.env.PORT || 3001);
 const io = new Server(httpServer, {
-  cors: { origin: process.env.WEB_URL, methods: ["GET", "POST"] }
+  cors: { origin: process.env.WEB_URL || "http://localhost:3000", methods: ["GET", "POST"] }
 });
 
 interface Player {
@@ -111,4 +112,4 @@ io.on("connection", (socket) => {
   });
 });
 
-httpServer.listen(3001, () => console.log("Socket server on port 3001"));
+httpServer.listen(port, () => console.log(`Socket server on port ${port}`));
