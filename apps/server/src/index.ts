@@ -101,6 +101,19 @@ io.on("connection", (socket) => {
     socket.to(roomId).emit("player:moved", { id: socket.id, ...data });
   });
 
+  socket.on("player:leave", () => {
+    const roomId = socket.data.roomId as string | undefined;
+
+    removePlayerFromRoom(socket.id, roomId);
+
+    if (roomId) {
+      socket.to(roomId).emit("player:left", socket.id);
+      socket.leave(roomId);
+    }
+
+    socket.data.roomId = undefined;
+  });
+
   socket.on("disconnect", () => {
     const roomId = socket.data.roomId as string | undefined;
 

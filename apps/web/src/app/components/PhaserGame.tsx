@@ -157,6 +157,7 @@ class GameScene extends Phaser.Scene {
   private avatarLookup: Record<string, AvatarState> = {};
   private currentAvatar: AvatarState | null = null;
   private lastDirection: "down" | "left" | "right" | "up" = "down";
+  private hasLeftRoom = false;
 
   constructor() {
     super({ key: "GameScene" });
@@ -407,6 +408,14 @@ class GameScene extends Phaser.Scene {
       this.emitPositions();
     });
 
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.cleanupSocket();
+    });
+
+    this.events.once(Phaser.Scenes.Events.DESTROY, () => {
+      this.cleanupSocket();
+    });
+
     this.emitPositions();
   }
 
@@ -517,7 +526,21 @@ class GameScene extends Phaser.Scene {
   }
 
   shutdown() {
-    this.socket?.disconnect();
+    this.cleanupSocket();
+  }
+
+  private cleanupSocket() {
+    if (!this.socket) {
+      return;
+    }
+
+    if (!this.hasLeftRoom) {
+      this.socket.emit("player:leave");
+      this.hasLeftRoom = true;
+    }
+
+    this.socket.removeAllListeners();
+    this.socket.disconnect();
   }
 }
 

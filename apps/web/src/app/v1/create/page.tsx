@@ -23,21 +23,18 @@ type Template = {
   rooms: TemplateRoom[];
 };
 
-const TEMPLATE_META: Record<string, { badge: string; badgeColor: string; desc: string; gradient: string }> = {
+const TEMPLATE_META: Record<string, { badgeColor: string; desc: string; gradient: string }> = {
   "Cozy Lounge": {
-    badge: "PERSONAL",
     badgeColor: "#7ee787",
     desc: "A low-light, intimate environment designed for deep focus and casual creative syncs.",
     gradient: "linear-gradient(145deg,#7c3a00 0%,#c46200 55%,#f5a623 100%)",
   },
   "Conference Hall": {
-    badge: "PRO ENTERPRISE",
     badgeColor: "#f0e68c",
     desc: "High-ceiling acoustics and structured layouts for large presentations and town halls.",
     gradient: "linear-gradient(145deg,#9b7fcb 0%,#c8b0e8 55%,#ede8f5 100%)",
   },
   "Open Office": {
-    badge: "COLLABORATIVE",
     badgeColor: "#7ee787",
     desc: "A balanced mix of private nooks and communal hubs for dynamic team interaction.",
     gradient: "linear-gradient(145deg,#003d2e 0%,#0a6652 55%,#1aaa88 100%)",
@@ -172,7 +169,6 @@ export default function CreatePage() {
         <NavBar onBack={goBack} />
         <div className="relative z-1 mx-auto max-w-[1100px] px-6 pb-16 pt-12">
           <div className="mb-10 rounded-[32px] border border-white/75 bg-white/62 px-7 pb-[26px] pt-7 shadow-[0_18px_48px_rgba(83,31,150,0.08)] backdrop-blur-[16px]">
-            <p className="mb-2.5 text-[12px] font-extrabold tracking-[0.18em] text-[#6f6b7c]">SPACE BLUEPRINT</p>
             <h1 className="mb-3 text-[clamp(32px,5vw,52px)] font-extrabold leading-[1.1] text-[#111]">
               Design your <em className="italic text-[#531f96]">spatial</em> reality.
             </h1>
@@ -220,12 +216,6 @@ export default function CreatePage() {
                       {!isAvailable ? (
                         <div className="absolute inset-0 bg-[rgba(17,17,24,0.32)]" />
                       ) : null}
-                      <span
-                        className="absolute bottom-3.5 left-3.5 rounded-[20px] px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] text-[#1a1a1a]"
-                        style={{ background: meta.badgeColor }}
-                      >
-                        {meta.badge}
-                      </span>
                     </div>
 
                     <div className="flex flex-1 flex-col px-5 pb-6 pt-5">

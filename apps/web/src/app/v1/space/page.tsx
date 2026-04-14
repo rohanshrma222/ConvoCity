@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/toast";
@@ -60,7 +61,9 @@ function NavBar() {
     <header className="sticky top-0 z-40 border-b border-[#e6e2f4] bg-white/90 backdrop-blur-[18px]">
       <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#2a0e5c_0%,#4d2db7_50%,#2a0e5c_100%)]" />
       <div className="mx-auto flex h-14 max-w-[1460px] items-center px-6">
-        <span className="text-lg font-bold tracking-[-0.5px] text-[#2d1b69]">ConvoCity</span>
+        <Link href="/dashboard" className="text-lg font-bold tracking-[-0.5px] text-[#2d1b69]">
+          ConvoCity
+        </Link>
       </div>
     </header>
   );
@@ -292,7 +295,7 @@ function SpaceDashboardPageContent() {
         toast({ title: "Joined space!", variant: "success" });
         setJoinOpen(false);
         setInviteCode("");
-        router.push(`/v1/space/${response.data.id}`);
+        router.push(`/v1/avatar?spaceId=${response.data.id}`);
       } catch (error) {
         toast({ title: error instanceof Error ? error.message : "Unable to join space", variant: "error" });
       }
