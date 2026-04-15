@@ -28,6 +28,7 @@ function formatDate(value: string) {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   }).format(new Date(value));
 }
 
@@ -350,23 +351,19 @@ function SpaceDashboardPageContent() {
                   }`}
                 >
                   {tab === "recent" ? (
-                    <>
-                      <AnimateIcon animateOnHover asChild>
-                        <button className="flex items-center justify-center gap-1.5">
-                          <Clock size={14} strokeWidth={2.1} />
-                          <span>Recent</span>
-                        </button>
-                      </AnimateIcon>
-                    </>
+                    <AnimateIcon animateOnHover asChild>
+                      <span className="flex items-center justify-center gap-1.5">
+                        <Clock size={14} strokeWidth={2.1} />
+                        <span>Recent</span>
+                      </span>
+                    </AnimateIcon>
                   ) : (
-                    <>
-                      <AnimateIcon animateOnHover asChild>
-                        <button className="flex items-center justify-center gap-1.5">
-                          <Layers size={14} strokeWidth={2.1} />
-                          <span>My Spaces</span>
-                        </button>
-                      </AnimateIcon>
-                    </>
+                    <AnimateIcon animateOnHover asChild>
+                      <span className="flex items-center justify-center gap-1.5">
+                        <Layers size={14} strokeWidth={2.1} />
+                        <span>My Spaces</span>
+                      </span>
+                    </AnimateIcon>
                   )}
                 </button>
               ))}

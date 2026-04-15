@@ -2,28 +2,21 @@
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import type {
+  JoinPlayerPayload,
+  MovePlayerPayload,
+  RoomState,
+  SocketClientToServerEvents,
+  SocketPlayer,
+  SocketServerToClientEvents,
+} from "@repo/types";
 
 const app = express();
 const httpServer = createServer(app);
 const port = Number(process.env.PORT || 3001);
-const io = new Server(httpServer, {
+const io = new Server<SocketClientToServerEvents, SocketServerToClientEvents>(httpServer, {
   cors: { origin: process.env.WEB_URL || "http://localhost:3000", methods: ["GET", "POST"] }
 });
-
-interface Player {
-  id: string;
-  userId: string;
-  x: number;
-  y: number;
-  name: string;
-  roomId: string;
-  characterId: string;
-}
-
-interface RoomState {
-  id: string;
-  players: Record<string, Player>;
-}
 
 const rooms: Record<string, RoomState> = {};
 
@@ -54,7 +47,7 @@ const removePlayerFromRoom = (playerId: string, roomId?: string) => {
 io.on("connection", (socket) => {
   console.log("Player connected:", socket.id);
 
-  socket.on("player:join", (data: { userId: string; name: string; x: number; y: number; roomId: string; characterId: string }) => {
+  socket.on("player:join", (data: JoinPlayerPayload) => {
     const roomId = data.roomId.trim();
     if (!roomId) return;
 
@@ -66,7 +59,7 @@ io.on("connection", (socket) => {
     }
 
     const room = getOrCreateRoom(roomId);
-    const player: Player = {
+    const player: SocketPlayer = {
       id: socket.id,
       userId: data.userId,
       x: data.x,
@@ -84,7 +77,7 @@ io.on("connection", (socket) => {
     socket.to(roomId).emit("player:joined", player);
   });
 
-  socket.on("player:move", (data: { x: number; y: number; anim: string; characterId?: string }) => {
+  socket.on("player:move", (data: MovePlayerPayload) => {
     const roomId = socket.data.roomId as string | undefined;
     if (!roomId) return;
 

@@ -3,6 +3,14 @@
 import { useEffect, useRef } from "react";
 import Phaser from "phaser";
 import { io, Socket } from "socket.io-client";
+import type {
+  JoinPlayerPayload,
+  MovePlayerPayload,
+  PlayerMovedEvent,
+  SocketClientToServerEvents,
+  SocketPlayer,
+  SocketServerToClientEvents,
+} from "@repo/types";
 import type { MapRoom } from "./GameCanvas";
 
 const TILE = 48;
@@ -132,16 +140,6 @@ type TemplateData = {
   colors: TemplateColors;
 };
 
-type SocketPlayer = {
-  id: string;
-  userId: string;
-  x: number;
-  y: number;
-  name: string;
-  roomId: string;
-  characterId: string;
-};
-
 class GameScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -151,7 +149,7 @@ class GameScene extends Phaser.Scene {
     left: Phaser.Input.Keyboard.Key;
     right: Phaser.Input.Keyboard.Key;
   };
-  private socket!: Socket;
+  private socket!: Socket<SocketServerToClientEvents, SocketClientToServerEvents>;
   private otherPlayers: Record<string, Phaser.GameObjects.Sprite> = {};
   private wallGroup!: Phaser.Physics.Arcade.StaticGroup;
   private avatarLookup: Record<string, AvatarState> = {};
@@ -366,14 +364,16 @@ class GameScene extends Phaser.Scene {
 
     this.socket = io(SOCKET_URL);
 
-    this.socket.emit("player:join", {
+    const joinPayload: JoinPlayerPayload = {
       userId: currentUserId,
       name: this.currentAvatar?.displayName ?? "Player",
       x: this.player.x,
       y: this.player.y,
       roomId,
       characterId: this.currentAvatar?.skinTone ?? "character-1",
-    });
+    };
+
+    this.socket.emit("player:join", joinPayload);
 
     this.socket.on("players:init", (players: SocketPlayer[]) => {
       players.forEach((player) => {
@@ -389,7 +389,7 @@ class GameScene extends Phaser.Scene {
       this.emitPositions();
     });
 
-    this.socket.on("player:moved", ({ id, x, y, anim, characterId }: { id: string; x: number; y: number; anim: string; characterId?: string }) => {
+    this.socket.on("player:moved", ({ id, x, y, anim, characterId }: PlayerMovedEvent) => {
       const other = this.otherPlayers[id];
 
       if (other) {
@@ -515,12 +515,14 @@ class GameScene extends Phaser.Scene {
       currentAnim = `idle-${this.lastDirection}`;
     }
 
-    this.socket?.emit("player:move", {
+    const movePayload: MovePlayerPayload = {
       x: this.player.x,
       y: this.player.y,
       anim: currentAnim,
       characterId,
-    });
+    };
+
+    this.socket?.emit("player:move", movePayload);
 
     this.emitPositions();
   }
