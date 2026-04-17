@@ -29,6 +29,26 @@
     { "posX": 1, "posY": 6, "name": "Meet Room" },
     { "posX": 12, "posY": 6, "name": "Focus Room" }
   ],
+  "zones": [
+    {
+      "id": "meeting-room-private",
+      "name": "Meeting Room",
+      "type": "private",
+      "x": 1,
+      "y": 6,
+      "width": 7,
+      "height": 6
+    },
+    {
+      "id": "focus-room-private",
+      "name": "Focus Room",
+      "type": "private",
+      "x": 12,
+      "y": 6,
+      "width": 7,
+      "height": 6
+    }
+  ],  
   "objects": [
     { "key": "AC", "tileX": 1.4, "tileY": 0.9, "width": 72, "height": 39, "depth": 3.5, "originX": 0, "originY": 1 },
     { "key": "desk1", "tileX": 1.1, "tileY": 5.25, "width": 192, "height": 129, "depth": 3.5, "originX": 0, "originY": 1 },
@@ -74,3 +94,4 @@
     "meetingFloor": "0xb6aba0"
   }
 }
+

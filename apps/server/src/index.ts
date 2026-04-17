@@ -67,6 +67,7 @@ io.on("connection", (socket) => {
       name: data.name,
       roomId,
       characterId: data.characterId,
+      zoneId: data.zoneId,
     };
 
     room.players[socket.id] = player;
@@ -90,6 +91,7 @@ io.on("connection", (socket) => {
     if (data.characterId) {
       player.characterId = data.characterId;
     }
+    player.zoneId = data.zoneId;
 
     socket.to(roomId).emit("player:moved", { id: socket.id, ...data });
   });

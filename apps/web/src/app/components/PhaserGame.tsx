@@ -6,6 +6,7 @@ import { io, Socket } from "socket.io-client";
 import type {
   JoinPlayerPayload,
   MovePlayerPayload,
+  PlayerPosition,
   PlayerMovedEvent,
   SocketClientToServerEvents,
   SocketPlayer,
@@ -56,12 +57,6 @@ type DecorItem = {
   depth?: number;
   originX?: number;
   originY?: number;
-};
-
-type PlayerPosition = {
-  userId: string;
-  x: number;
-  y: number;
 };
 
 function normalizeCharacterId(value?: string): number {
@@ -125,6 +120,16 @@ type TemplateColors = {
   meetingFloor: string;
 };
 
+type TemplateZone = {
+  id: string;
+  name: string;
+  type: "private";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 type TemplateData = {
   id: string;
   name: string;
@@ -135,6 +140,7 @@ type TemplateData = {
   tileSize: number;
   tileGrid: number[][];
   meetingRooms: TemplateMeetingRoom[];
+  zones?: TemplateZone[];
   objects: DecorItem[];
   roomLabels?: TemplateRoomLabel[];
   colors: TemplateColors;
@@ -156,9 +162,127 @@ class GameScene extends Phaser.Scene {
   private currentAvatar: AvatarState | null = null;
   private lastDirection: "down" | "left" | "right" | "up" = "down";
   private hasLeftRoom = false;
+  private tileSize = TILE;
+  private zones: TemplateZone[] = [];
+  private mapWidth = 0;
+  private mapHeight = 0;
+  private activeZoneId: string | null = null;
+  private zoneDimmers: Phaser.GameObjects.Rectangle[] = [];
 
   constructor() {
     super({ key: "GameScene" });
+  }
+
+  private getZoneIdForPosition(
+    x: number,
+    y: number,
+    tileSize: number,
+    zones: TemplateZone[],
+  ): string | null {
+    const tileX = x / tileSize;
+    const tileY = y / tileSize;
+
+    const zone = zones.find(
+      (item) =>
+        tileX >= item.x &&
+        tileX < item.x + item.width &&
+        tileY >= item.y &&
+        tileY < item.y + item.height,
+    );
+
+    return zone?.id ?? null;
+  }
+
+  private createZoneDimmers() {
+    this.zoneDimmers = Array.from({ length: 4 }, () =>
+      this.add
+        .rectangle(0, 0, 0, 0, 0x000000, 0.36)
+        .setOrigin(0)
+        .setDepth(4.7)
+        .setAlpha(0)
+        .setVisible(false),
+    );
+  }
+
+  private fadeZoneDimmersIn() {
+    this.zoneDimmers.forEach((dimmer) => {
+      this.tweens.killTweensOf(dimmer);
+
+      if (!dimmer.visible) {
+        dimmer.setAlpha(0).setVisible(true);
+      }
+
+      this.tweens.add({
+        targets: dimmer,
+        alpha: 1,
+        duration: 240,
+        ease: "Quad.easeOut",
+      });
+    });
+  }
+
+  private fadeZoneDimmersOut() {
+    this.zoneDimmers.forEach((dimmer) => {
+      this.tweens.killTweensOf(dimmer);
+
+      if (!dimmer.visible && dimmer.alpha === 0) {
+        return;
+      }
+
+      this.tweens.add({
+        targets: dimmer,
+        alpha: 0,
+        duration: 180,
+        ease: "Quad.easeOut",
+        onComplete: () => {
+          dimmer.setVisible(false);
+        },
+      });
+    });
+  }
+
+  private updateZoneFocus(zoneId: string | null) {
+    if (this.activeZoneId === zoneId) {
+      return;
+    }
+
+    this.activeZoneId = zoneId;
+
+    if (!zoneId) {
+      this.fadeZoneDimmersOut();
+      return;
+    }
+
+    const zone = this.zones.find((item) => item.id === zoneId);
+
+    if (!zone) {
+      this.fadeZoneDimmersOut();
+      this.activeZoneId = null;
+      return;
+    }
+
+    const zoneX = zone.x * this.tileSize;
+    const zoneY = zone.y * this.tileSize;
+    const zoneWidth = zone.width * this.tileSize;
+    const zoneHeight = zone.height * this.tileSize;
+    const [top, left, right, bottom] = this.zoneDimmers;
+
+    if (!top || !left || !right || !bottom) {
+      return;
+    }
+
+    top.setPosition(0, 0).setSize(this.mapWidth, zoneY).setVisible(zoneY > 0);
+    left.setPosition(0, zoneY).setSize(zoneX, zoneHeight).setVisible(zoneX > 0);
+    right
+      .setPosition(zoneX + zoneWidth, zoneY)
+      .setSize(this.mapWidth - (zoneX + zoneWidth), zoneHeight)
+      .setVisible(zoneX + zoneWidth < this.mapWidth);
+    bottom
+      .setPosition(0, zoneY + zoneHeight)
+      .setSize(this.mapWidth, this.mapHeight - (zoneY + zoneHeight))
+      .setVisible(zoneY + zoneHeight < this.mapHeight);
+
+    this.fadeZoneDimmersIn();
   }
 
   private emitPositions() {
@@ -176,16 +300,19 @@ class GameScene extends Phaser.Scene {
         userId: currentUserId,
         x: this.player.x,
         y: this.player.y,
+        zoneId: this.getZoneIdForPosition(this.player.x, this.player.y, this.tileSize, this.zones),
       },
       ...Object.values(this.otherPlayers)
         .map((sprite) => {
           const userId = sprite.getData("userId") as string | undefined;
+          const zoneId = sprite.getData("zoneId") as string | null | undefined;
           if (!userId) return null;
 
           return {
             userId,
             x: sprite.x,
             y: sprite.y,
+            zoneId: zoneId ?? null,
           };
         })
         .filter((player): player is PlayerPosition => player !== null),
@@ -219,11 +346,16 @@ class GameScene extends Phaser.Scene {
     }
 
     const tileSize = template.tileSize || TILE;
+    this.tileSize = tileSize;
     const map = template.tileGrid;
+    const zones = template.zones ?? [];
+    this.zones = zones;
     const mapRows = template.rows || map.length;
     const mapCols = template.cols || map[0]?.length || 0;
     const mapW = mapCols * tileSize;
     const mapH = mapRows * tileSize;
+    this.mapWidth = mapW;
+    this.mapHeight = mapH;
     const colors = {
       floor: parseColor(template.colors.floor),
       floorAlt: parseColor(template.colors.floorAlt),
@@ -279,6 +411,7 @@ class GameScene extends Phaser.Scene {
 
     this.addDecor(template, tileSize);
     this.addRoomLabels(template, tileSize);
+    this.createZoneDimmers();
 
     for (let characterIndex = 0; characterIndex < CHARACTER_COUNT; characterIndex += 1) {
       this.anims.create({
@@ -347,6 +480,14 @@ class GameScene extends Phaser.Scene {
     this.player.setSize(24, 40);
     this.player.setOffset(12, 12);
 
+    const currentZoneId = this.getZoneIdForPosition(
+      this.player.x,
+      this.player.y,
+      tileSize,
+      zones,
+    );
+    this.updateZoneFocus(currentZoneId);
+
     this.physics.add.collider(this.player, this.wallGroup);
 
     this.cursors = this.input.keyboard!.createCursorKeys();
@@ -371,6 +512,7 @@ class GameScene extends Phaser.Scene {
       y: this.player.y,
       roomId,
       characterId: this.currentAvatar?.skinTone ?? "character-1",
+      zoneId: currentZoneId,
     };
 
     this.socket.emit("player:join", joinPayload);
@@ -389,11 +531,12 @@ class GameScene extends Phaser.Scene {
       this.emitPositions();
     });
 
-    this.socket.on("player:moved", ({ id, x, y, anim, characterId }: PlayerMovedEvent) => {
+    this.socket.on("player:moved", ({ id, x, y, anim, characterId, zoneId }: PlayerMovedEvent) => {
       const other = this.otherPlayers[id];
 
       if (other) {
         other.setPosition(x, y);
+        other.setData("zoneId", zoneId);
         const characterIndex = normalizeCharacterId(characterId);
         const [state, directionRaw] = anim.split("-");
         const direction = (directionRaw as "down" | "left" | "right" | "up") || "down";
@@ -460,6 +603,7 @@ class GameScene extends Phaser.Scene {
   addOtherPlayer(player: SocketPlayer) {
     const sprite = this.add.sprite(player.x, player.y, "character").setDepth(4.5).setScale(0.9);
     sprite.setData("userId", player.userId);
+    sprite.setData("zoneId", player.zoneId);
     sprite.play(animationKey(normalizeCharacterId(player.characterId), "down", "idle"));
     this.otherPlayers[player.id] = sprite;
   }
@@ -515,11 +659,20 @@ class GameScene extends Phaser.Scene {
       currentAnim = `idle-${this.lastDirection}`;
     }
 
+    const currentZoneId = this.getZoneIdForPosition(
+      this.player.x,
+      this.player.y,
+      this.tileSize,
+      this.zones,
+    );
+    this.updateZoneFocus(currentZoneId);
+
     const movePayload: MovePlayerPayload = {
       x: this.player.x,
       y: this.player.y,
       anim: currentAnim,
       characterId,
+      zoneId: currentZoneId,
     };
 
     this.socket?.emit("player:move", movePayload);

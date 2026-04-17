@@ -6,7 +6,10 @@ export interface SocketPlayer {
   name: string;
   roomId: string;
   characterId: string;
+  zoneId: string | null;
 }
+
+export type PlayerPosition = Pick<SocketPlayer, "userId" | "x" | "y" | "zoneId">;
 
 export interface RoomState {
   id: string;
@@ -20,6 +23,7 @@ export interface JoinPlayerPayload {
   y: number;
   roomId: string;
   characterId: string;
+  zoneId: string | null;
 }
 
 export interface MovePlayerPayload {
@@ -27,6 +31,7 @@ export interface MovePlayerPayload {
   y: number;
   anim: string;
   characterId?: string;
+  zoneId: string | null;
 }
 
 export interface PlayerMovedEvent extends MovePlayerPayload {

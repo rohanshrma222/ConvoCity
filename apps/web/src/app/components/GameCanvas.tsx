@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { ChevronDown, Grid2x2, Mic, MicOff, MonitorUp, SmilePlus, Video, VideoOff } from "lucide-react";
+import type { PlayerPosition } from "@repo/types";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/toast";
@@ -15,12 +16,6 @@ export type MapRoom = {
   type: "OFFICE" | "MEETING" | "OPEN" | "LOUNGE";
   posX: number;
   posY: number;
-};
-
-export type PlayerPosition = {
-  userId: string;
-  x: number;
-  y: number;
 };
 
 type SpaceResponse = {

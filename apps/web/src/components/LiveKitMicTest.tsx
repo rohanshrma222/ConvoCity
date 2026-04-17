@@ -11,8 +11,8 @@ import {
   type RemoteTrackPublication,
 } from "livekit-client";
 import { Maximize2, MicOff } from "lucide-react";
+import type { PlayerPosition } from "@repo/types";
 import { fetchLiveKitToken } from "@/lib/livekit";
-import type { PlayerPosition } from "@/app/components/GameCanvas";
 
 const HEARING_RADIUS = 220;
 const ENTER_RADIUS = 220;
@@ -465,6 +465,12 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
         continue;
       }
 
+      if (!zoneRulesAllow(self, remote)) {
+        remoteAudio.gain.gain.value = 0;
+        audibleStateRef.current.set(participantId, false);
+        continue;
+      }
+
       const distance = getDistance(self, remote);
       const wasAudible = audibleStateRef.current.get(participantId) ?? false;
       const nowAudible = wasAudible ? distance <= EXIT_RADIUS : distance <= ENTER_RADIUS;
@@ -485,6 +491,10 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
     for (const participantId of remoteVideoRef.current.keys()) {
       const remote = playerPositions.find((player) => player.userId === participantId);
       if (!remote) continue;
+
+      if (!zoneRulesAllow(self, remote)) {
+        continue;
+      }
 
       const distance = getDistance(self, remote);
       if (distance <= VIDEO_RADIUS) {
@@ -601,4 +611,16 @@ function getVolume(distance: number) {
   }
 
   return Math.max(0, 1 - distance / HEARING_RADIUS);
+}
+
+function zoneRulesAllow(self: PlayerPosition, remote: PlayerPosition) {
+  if (!self.zoneId && !remote.zoneId) {
+    return true;
+  }
+
+  if (self.zoneId && remote.zoneId) {
+    return self.zoneId === remote.zoneId;
+  }
+
+  return false;
 }
