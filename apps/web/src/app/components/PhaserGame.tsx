@@ -17,7 +17,9 @@ import type { MapRoom } from "./GameCanvas";
 const TILE = 48;
 const DECOR_DEPTH = 3.5;
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL ?? "http://localhost:3001";
-const DEBUG_POSITION_SYNC = true;
+const DEBUG_POSITION_SYNC = false;
+const EMIT_INTERVAL = 66;
+const POSITION_THRESHOLD = 1;
 
 const CHAR_FRAME_W = 48;
 const CHAR_FRAME_H = 96;
@@ -169,6 +171,13 @@ class GameScene extends Phaser.Scene {
   private mapHeight = 0;
   private activeZoneId: string | null = null;
   private zoneDimmers: Phaser.GameObjects.Rectangle[] = [];
+  private lastEmitTime = 0;
+  private lastEmittedX = 0;
+  private lastEmittedY = 0;
+  private lastEmittedAnim = `idle-${this.lastDirection}`;
+  private lastEmittedZoneId: string | null = null;
+  private wasMoving = false;
+  private lastPositionEmitTime = 0;
 
   constructor() {
     super({ key: "GameScene" });
@@ -524,6 +533,11 @@ class GameScene extends Phaser.Scene {
     };
 
     this.socket.emit("player:join", joinPayload);
+    this.lastEmittedX = this.player.x;
+    this.lastEmittedY = this.player.y;
+    this.lastEmittedAnim = `idle-${this.lastDirection}`;
+    this.lastEmittedZoneId = currentZoneId;
+    this.lastEmitTime = performance.now();
 
     this.socket.on("players:init", (players: SocketPlayer[]) => {
       players.forEach((player) => {
@@ -541,26 +555,25 @@ class GameScene extends Phaser.Scene {
 
     this.socket.on("player:moved", ({ id, x, y, anim, characterId, zoneId }: PlayerMovedEvent) => {
       const other = this.otherPlayers[id];
+      if (!other) return;
 
-      if (other) {
-        if (DEBUG_POSITION_SYNC) {
-          console.log("[position-sync] remote move", {
-            socketId: id,
-            userId: other.getData("userId"),
-            x,
-            y,
-            anim,
-            zoneId,
-          });
-        }
-        other.setPosition(x, y);
-        other.setData("zoneId", zoneId);
-        const characterIndex = normalizeCharacterId(characterId);
-        const [state, directionRaw] = anim.split("-");
-        const direction = (directionRaw as "down" | "left" | "right" | "up") || "down";
-        other.play(animationKey(characterIndex, direction, state === "idle" ? "idle" : "walk"), true);
-        this.emitPositions();
-      }
+      other.setData("zoneId", zoneId);
+
+      this.tweens.killTweensOf(other);
+      this.tweens.add({
+        targets: other,
+        x,
+        y,
+        duration: 80,
+        ease: "Linear",
+      });
+
+      const characterIndex = normalizeCharacterId(characterId);
+      const [state, directionRaw] = anim.split("-");
+      const direction = (directionRaw as "down" | "left" | "right" | "up") || "down";
+      other.play(animationKey(characterIndex, direction, state === "idle" ? "idle" : "walk"), true);
+
+      this.emitPositions();
     });
 
     this.socket.on("player:left", (id: string) => {
@@ -577,7 +590,10 @@ class GameScene extends Phaser.Scene {
       this.cleanupSocket();
     });
 
-    this.emitPositions();
+    if (performance.now() - this.lastPositionEmitTime >= 100) {
+      this.emitPositions();
+      this.lastPositionEmitTime = performance.now();
+    }
   }
 
   private addDecor(template: TemplateData, tileSize: number) {
@@ -693,7 +709,32 @@ class GameScene extends Phaser.Scene {
       zoneId: currentZoneId,
     };
 
-    this.socket?.emit("player:move", movePayload);
+    const now = performance.now();
+    const dx = Math.abs(this.player.x - this.lastEmittedX);
+    const dy = Math.abs(this.player.y - this.lastEmittedY);
+    const positionChanged = dx > POSITION_THRESHOLD || dy > POSITION_THRESHOLD;
+    const animChanged = currentAnim !== this.lastEmittedAnim;
+    const zoneChanged = currentZoneId !== this.lastEmittedZoneId;
+    const somethingChanged = positionChanged || animChanged || zoneChanged;
+
+    const sendMove = () => {
+      this.socket?.emit("player:move", movePayload);
+      this.lastEmitTime = now;
+      this.lastEmittedX = this.player.x;
+      this.lastEmittedY = this.player.y;
+      this.lastEmittedAnim = currentAnim;
+      this.lastEmittedZoneId = currentZoneId;
+    };
+
+    if (moving && somethingChanged && now - this.lastEmitTime >= EMIT_INTERVAL) {
+      sendMove();
+      this.wasMoving = true;
+    }
+
+    if (!moving && this.wasMoving) {
+      sendMove();
+      this.wasMoving = false;
+    }
 
     this.emitPositions();
   }
