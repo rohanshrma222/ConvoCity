@@ -17,6 +17,7 @@ import type { MapRoom } from "./GameCanvas";
 const TILE = 48;
 const DECOR_DEPTH = 3.5;
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL ?? "http://localhost:3001";
+const DEBUG_POSITION_SYNC = true;
 
 const CHAR_FRAME_W = 48;
 const CHAR_FRAME_H = 96;
@@ -318,6 +319,13 @@ class GameScene extends Phaser.Scene {
         .filter((player): player is PlayerPosition => player !== null),
     ];
 
+    if (DEBUG_POSITION_SYNC) {
+      console.log("[position-sync] emit", {
+        currentUserId,
+        positions,
+      });
+    }
+
     emit(positions);
   }
 
@@ -535,6 +543,16 @@ class GameScene extends Phaser.Scene {
       const other = this.otherPlayers[id];
 
       if (other) {
+        if (DEBUG_POSITION_SYNC) {
+          console.log("[position-sync] remote move", {
+            socketId: id,
+            userId: other.getData("userId"),
+            x,
+            y,
+            anim,
+            zoneId,
+          });
+        }
         other.setPosition(x, y);
         other.setData("zoneId", zoneId);
         const characterIndex = normalizeCharacterId(characterId);

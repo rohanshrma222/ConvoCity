@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import {
   LocalAudioTrack,
   Room,
@@ -19,6 +19,7 @@ const ENTER_RADIUS = 220;
 const EXIT_RADIUS = 250;
 const VIDEO_RADIUS = 160;
 const POSITION_SCALE = 96;
+const DEBUG_SPATIAL_AUDIO = true;
 
 type RemoteAudioGraph = {
   element: HTMLAudioElement;
@@ -67,10 +68,11 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const localVideoContainerRef = useRef<HTMLDivElement | null>(null);
   const audibleStateRef = useRef<Map<string, boolean>>(new Map());
+  const positionsByUserIdRef = useRef<Map<string, PlayerPosition>>(new Map());
+  const currentUserIdRef = useRef(currentUserId);
   const micToggleInFlightRef = useRef(false);
   const cameraToggleInFlightRef = useRef(false);
   const [status, setStatus] = useState<Status>("idle");
-  const [errorMessage, setErrorMessage] = useState("");
   const [remoteParticipants, setRemoteParticipants] = useState<string[]>([]);
   const [remoteVideoParticipants, setRemoteVideoParticipants] = useState<string[]>([]);
   const [micEnabled, setMicEnabled] = useState(false);
@@ -78,6 +80,10 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
   const [nearbyVideoParticipants, setNearbyVideoParticipants] = useState<string[]>([]);
   const visibleRemoteVideoParticipants = nearbyVideoParticipants.filter((participantId) =>
     remoteVideoParticipants.includes(participantId),
+  );
+  const positionsByUserId = useMemo(
+    () => new Map(playerPositions.map((player) => [player.userId, player])),
+    [playerPositions],
   );
 
   useEffect(() => {
@@ -87,6 +93,11 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
       connected: status === "connected",
     });
   }, [cameraEnabled, micEnabled, onMediaStateChange, status]);
+
+  useEffect(() => {
+    positionsByUserIdRef.current = positionsByUserId;
+    currentUserIdRef.current = currentUserId;
+  }, [currentUserId, positionsByUserId]);
 
   useImperativeHandle(ref, () => ({
     async toggleMicrophone() {
@@ -120,7 +131,6 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
           const next = !cameraEnabled;
 
           await room.localParticipant.setCameraEnabled(next);
-          setErrorMessage("");
           setCameraEnabled(next);
 
           if (next) {
@@ -134,15 +144,6 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
       } catch (error) {
         setCameraEnabled((current) => !current);
         console.warn("Unable to toggle camera", error);
-        if (error instanceof Error) {
-          if (error.name === "NotReadableError") {
-            setErrorMessage("Camera is already in use by another browser or app.");
-          } else if (error.name === "NotAllowedError") {
-            setErrorMessage("Camera permission was denied.");
-          } else {
-            setErrorMessage(error.message || "Unable to enable camera.");
-          }
-        }
       } finally {
         cameraToggleInFlightRef.current = false;
       }
@@ -208,13 +209,96 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
     attachLocalCameraTrack(publication);
   }
 
+  function updateSpatialMedia() {
+    const positions = positionsByUserIdRef.current;
+    const self = positions.get(currentUserIdRef.current);
+
+    if (!self) {
+      if (DEBUG_SPATIAL_AUDIO) {
+        console.log("[spatial-audio] self position missing", {
+          currentUserId: currentUserIdRef.current,
+          knownUsers: [...positions.keys()],
+        });
+      }
+      for (const [participantId, remoteAudio] of remoteAudioRef.current.entries()) {
+        remoteAudio.gain.gain.value = 0;
+        audibleStateRef.current.set(participantId, false);
+      }
+      setNearbyVideoParticipants([]);
+      return;
+    }
+
+    const nextNearbyVideoParticipants: string[] = [];
+
+    for (const [participantId, remoteAudio] of remoteAudioRef.current.entries()) {
+      const remote = positions.get(participantId);
+
+      if (!remote || !zoneRulesAllow(self, remote)) {
+        if (DEBUG_SPATIAL_AUDIO) {
+          console.log("[spatial-audio] muted due to missing remote or zone rule", {
+            selfUserId: self.userId,
+            participantId,
+            hasRemote: Boolean(remote),
+            selfZoneId: self.zoneId,
+            remoteZoneId: remote?.zoneId ?? null,
+            knownUsers: [...positions.keys()],
+          });
+        }
+        remoteAudio.gain.gain.value = 0;
+        audibleStateRef.current.set(participantId, false);
+        continue;
+      }
+
+      const distance = getDistance(self, remote);
+      const wasAudible = audibleStateRef.current.get(participantId) ?? false;
+      const nowAudible = wasAudible ? distance <= EXIT_RADIUS : distance <= ENTER_RADIUS;
+      const relativeX = (remote.x - self.x) / POSITION_SCALE;
+      const relativeZ = (remote.y - self.y) / POSITION_SCALE;
+
+      if (remoteAudio.panner) {
+        remoteAudio.panner.positionX.value = relativeX;
+        remoteAudio.panner.positionY.value = 0;
+        remoteAudio.panner.positionZ.value = relativeZ;
+      }
+
+      audibleStateRef.current.set(participantId, nowAudible);
+      remoteAudio.gain.gain.value = nowAudible ? getVolume(distance) : 0;
+
+      if (DEBUG_SPATIAL_AUDIO) {
+        console.log("[spatial-audio] applied", {
+          selfUserId: self.userId,
+          participantId,
+          distance,
+          nowAudible,
+          gain: remoteAudio.gain.gain.value,
+          relativeX,
+          relativeZ,
+        });
+      }
+    }
+
+    for (const participantId of remoteVideoRef.current.keys()) {
+      const remote = positions.get(participantId);
+      if (!remote || !zoneRulesAllow(self, remote)) {
+        continue;
+      }
+
+      const distance = getDistance(self, remote);
+      if (distance <= VIDEO_RADIUS) {
+        nextNearbyVideoParticipants.push(participantId);
+      }
+    }
+
+    setNearbyVideoParticipants(nextNearbyVideoParticipants);
+  }
+
   useEffect(() => {
     let active = true;
+    let spatialIntervalId: number | null = null;
 
     async function connect() {
       try {
         setStatus("fetching-token");
-        setErrorMessage("");
 
         const { token, url } = await fetchLiveKitToken(spaceId);
         if (!active) return;
@@ -282,6 +366,8 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
             existingVideo.remove();
             remoteVideoRef.current.delete(participant.identity);
           }
+
+          updateSpatialMedia();
         });
 
         room.on(
@@ -302,6 +388,7 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
               setRemoteVideoParticipants((current) =>
                 current.includes(participant.identity) ? current : [...current, participant.identity],
               );
+              updateSpatialMedia();
               return;
             }
 
@@ -318,9 +405,11 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
 
             const audioEl = track.attach();
             audioEl.autoplay = true;
-            audioEl.dataset.participantId = participant.identity;
+            audioEl.muted = true;
+            audioEl.volume = 0;
             audioEl.className = "hidden";
             document.body.appendChild(audioEl);
+            void audioEl.play().catch(() => {});
 
             const mediaTrack =
               audioEl.srcObject instanceof MediaStream ? audioEl.srcObject.getAudioTracks()[0] : null;
@@ -345,11 +434,10 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
             panner.coneOuterAngle = 0;
             panner.coneOuterGain = 1;
 
-            gain.gain.value = 1;
+            gain.gain.value = 0;
             source.connect(gain);
             gain.connect(panner);
             panner.connect(audioContext.destination);
-            audioEl.muted = true;
 
             remoteAudioRef.current.set(participant.identity, {
               element: audioEl,
@@ -358,6 +446,16 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
               gain,
               panner,
             });
+
+            if (DEBUG_SPATIAL_AUDIO) {
+              console.log("[spatial-audio] remote audio subscribed", {
+                participantId: participant.identity,
+                knownUsers: [...positionsByUserIdRef.current.keys()],
+                trackSid: track.sid,
+              });
+            }
+
+            updateSpatialMedia();
           },
         );
 
@@ -371,6 +469,7 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
                 remoteVideoRef.current.delete(participant.identity);
               }
               setRemoteVideoParticipants((current) => current.filter((id) => id !== participant.identity));
+              updateSpatialMedia();
               return;
             }
 
@@ -382,6 +481,7 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
               existingAudio.panner?.disconnect();
               remoteAudioRef.current.delete(participant.identity);
             }
+            updateSpatialMedia();
           },
         );
 
@@ -403,10 +503,14 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
 
         setStatus("connected");
         setRemoteParticipants(room.remoteParticipants.size > 0 ? [...room.remoteParticipants.keys()] : []);
+        updateSpatialMedia();
+        spatialIntervalId = window.setInterval(() => {
+          updateSpatialMedia();
+        }, 120);
       } catch (error) {
         if (!active) return;
         setStatus("failed");
-        setErrorMessage(error instanceof Error ? error.message : "Unable to connect to LiveKit");
+        console.warn("Unable to connect to LiveKit", error);
       }
     }
 
@@ -414,6 +518,10 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
 
     return () => {
       active = false;
+
+      if (spatialIntervalId !== null) {
+        window.clearInterval(spatialIntervalId);
+      }
 
       const room = roomRef.current;
       roomRef.current = null;
@@ -448,62 +556,8 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
   }, [spaceId]);
 
   useEffect(() => {
-    const self = playerPositions.find((player) => player.userId === currentUserId);
-    if (!self) {
-      setNearbyVideoParticipants([]);
-      return;
-    }
-
-    const nextNearbyVideoParticipants: string[] = [];
-
-    for (const [participantId, remoteAudio] of remoteAudioRef.current.entries()) {
-      const remote = playerPositions.find((player) => player.userId === participantId);
-
-      if (!remote) {
-        remoteAudio.gain.gain.value = 0;
-        audibleStateRef.current.set(participantId, false);
-        continue;
-      }
-
-      if (!zoneRulesAllow(self, remote)) {
-        remoteAudio.gain.gain.value = 0;
-        audibleStateRef.current.set(participantId, false);
-        continue;
-      }
-
-      const distance = getDistance(self, remote);
-      const wasAudible = audibleStateRef.current.get(participantId) ?? false;
-      const nowAudible = wasAudible ? distance <= EXIT_RADIUS : distance <= ENTER_RADIUS;
-
-      const relativeX = (remote.x - self.x) / POSITION_SCALE;
-      const relativeZ = (remote.y - self.y) / POSITION_SCALE;
-
-      if (remoteAudio.panner) {
-        remoteAudio.panner.positionX.value = relativeX;
-        remoteAudio.panner.positionY.value = 0;
-        remoteAudio.panner.positionZ.value = relativeZ;
-      }
-
-      audibleStateRef.current.set(participantId, nowAudible);
-      remoteAudio.gain.gain.value = nowAudible ? getVolume(distance) : 0;
-    }
-
-    for (const participantId of remoteVideoRef.current.keys()) {
-      const remote = playerPositions.find((player) => player.userId === participantId);
-      if (!remote) continue;
-
-      if (!zoneRulesAllow(self, remote)) {
-        continue;
-      }
-
-      const distance = getDistance(self, remote);
-      if (distance <= VIDEO_RADIUS) {
-        nextNearbyVideoParticipants.push(participantId);
-      }
-    }
-
-    setNearbyVideoParticipants(nextNearbyVideoParticipants);
-  }, [currentUserId, playerPositions]);
+    updateSpatialMedia();
+  }, [currentUserId, positionsByUserId]);
 
   function mountLocalVideo(container: HTMLDivElement | null) {
     localVideoContainerRef.current = container;
@@ -542,12 +596,6 @@ const LiveKitMicTest = forwardRef<LiveKitMediaHandle, LiveKitMicTestProps>(funct
           onMountVideo={(node) => mountRemoteVideo(participantId, node)}
         />
       ))}
-
-      {errorMessage ? (
-        <div className="overflow-hidden rounded-[18px] border border-red-400/15 bg-[#2b2e33]/88 p-3 text-white shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl">
-          <p className="rounded-lg bg-red-500/15 px-2.5 py-2 text-xs text-red-100">{errorMessage}</p>
-        </div>
-      ) : null}
 
       {status !== "connected" && !cameraEnabled && visibleRemoteVideoParticipants.length === 0 ? (
         <div className="overflow-hidden rounded-[18px] border border-white/10 bg-[#2b2e33]/88 p-3 text-white shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl">
