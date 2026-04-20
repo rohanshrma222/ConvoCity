@@ -3,9 +3,11 @@ import cors from "cors";
 import authRouter from "./routes/auth.route.js";
 import { router as v1Router } from "./routes/v1/index.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { authRateLimit } from "./middleware/rateLimit.js";
 
 const app: Express = express();
 const webUrl = (process.env.WEB_URL || "http://localhost:3000").replace(/\/+$/, "");
+app.set("trust proxy", 1);
 
 app.use(
   cors({
@@ -16,7 +18,7 @@ app.use(
   }),
 );
 
-app.use("/api/auth", authRouter);
+app.use("/api/auth", authRateLimit, authRouter);
 app.use(express.json());
 
 app.get("/", (_req, res) => {
