@@ -23,7 +23,7 @@ function AvatarIllustration() {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src="/assets/dashboard image.png"
+      src="/assets/dashboard-image.png"
       alt="ConvoCity avatar"
       className="block h-[350px] w-[450px] rounded-[30px] object-cover"
     />
@@ -47,7 +47,7 @@ function AvatarsBar() {
   const names = ["A", "B", "C", "D"];
 
   return (
-    <div className="absolute bottom-4 right-4 flex items-center gap-1 rounded-full bg-white/95 px-3 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
+    <div className="absolute bottom-4 right-4 flex items-center gap-1 rounded-full bg-white/95 px-2 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
       <div className="flex">
         {avatarColors.map((color, i) => (
           <div
@@ -92,7 +92,7 @@ const steps = [
   {
     title: "Choose a Map",
     description:
-      "Select from our library of designer offices, Zen gardens, or industrial lofts. Every space is built for flow.",
+      "Select from our library of designer offices, Every space is built for flow.",
     cta: "Browse Gallery",
     icon: BookOpenText,
     iconClassName: "bg-[#eadcff] text-[#16151f]",
@@ -317,9 +317,9 @@ export default function DashboardPage() {
           <section className="mx-auto flex min-h-[calc(100vh-63px)] max-w-[1200px] flex-col justify-center px-7 py-20">
             <div className="grid grid-cols-1 items-center gap-[60px] md:grid-cols-2">
               <div className="animate-[fadeUp_0.6s_ease_both]">
-                <div className="mb-6 inline-flex items-center gap-1.5 rounded-full border border-[#81C784] bg-[#E8F5E9] px-3.5 py-1.5">
-                  <span className="block h-1.5 w-1.5 rounded-full bg-[#388E3C]" />
-                  <span className="text-[11px] font-bold tracking-[0.10em] text-[#388E3C]">REDEFINING PRESENCE</span>
+                <div className="mb-6 inline-flex items-center gap-1.5 rounded-full border border-[#c081c7] bg-[#f3e8f5] px-3.5 py-1.5">
+                  <span className="block h-1.5 w-1.5 rounded-full bg-[#4b388e]" />
+                  <span className="text-[11px] font-bold tracking-[0.10em] text-[#7042b3]">REDEFINING PRESENCE</span>
                 </div>
 
                 <h1 className="m-0 mb-5 text-[clamp(36px,5vw,58px)] font-black leading-[1.08] tracking-[-1.5px] text-[#1A1A2E]">
@@ -400,9 +400,9 @@ export default function DashboardPage() {
 
                 <div className="mt-8 flex items-center">
                   <div className="flex items-center">
-                    <TeamAvatar label="Studio" bg="#77d4d1" text="#3d4c4a" />
-                    <TeamAvatar label="A" bg="#f3efe8" text="#8f816e" overlap />
-                    <TeamAvatar label="A" bg="#5ebfc0" text="#ffffff" overlap />
+                    <TeamAvatar label="X" bg="#77d4d1" text="#3d4c4a" />
+                    <TeamAvatar label="Y" bg="#f3efe8" text="#8f816e" overlap />
+                    <TeamAvatar label="z" bg="#5ebfc0" text="#ffffff" overlap />
                   </div>
                   <p className="ml-4 text-[20px] font-semibold tracking-[-0.03em] text-[#4f5560]">
                     Join 2,000+ Teams
