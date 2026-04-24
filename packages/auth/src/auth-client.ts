@@ -2,7 +2,8 @@
 // useSession React hook. The /client entry gives an Atom, not a hook.
 import { createAuthClient } from "better-auth/react";
 
-export const authClient: any = createAuthClient({
+// Not exported — consumers import the named members below directly.
+const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_AUTH_URL ?? "http://localhost:3002",
 });
 
