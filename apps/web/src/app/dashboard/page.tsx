@@ -239,7 +239,7 @@ export default function DashboardPage() {
               className="text-[17px] font-extrabold tracking-[-0.5px] text-[#7BB4FF] cursor-pointer">ConvoCity</span>
             </div>
 
-            <nav className="ml-2 flex gap-1">
+            <nav className="ml-2 hidden gap-1 md:flex">
               {[
                 { name: "Features", href: "#features" },
                 { name: "Method", href: "#method" },
@@ -262,7 +262,7 @@ export default function DashboardPage() {
             <div className="ml-auto flex items-center gap-2.5">
               <button 
               onClick={() => router.push(session ? "/v1/space" : "/sign-in")}
-              className="cursor-pointer rounded-[22px] border-[1.5px] border-[#7BB4FF]/20 bg-transparent px-[18px] py-2 text-sm font-medium text-[#1A1A2E] transition-colors hover:border-[#7BB4FF]">
+              className="hidden cursor-pointer rounded-[22px] border-[1.5px] border-[#7BB4FF]/20 bg-transparent px-[18px] py-2 text-sm font-medium text-[#1A1A2E] transition-colors hover:border-[#7BB4FF] sm:block">
                 Join with Code
               </button>
               <button
@@ -316,7 +316,13 @@ export default function DashboardPage() {
                 >
                   Start for Free
                 </button>
-                <button className="group flex cursor-pointer items-center justify-center gap-1.5 rounded-[16px] border-none bg-[#f0f1f3] px-6 py-3.5 text-[15px] font-semibold text-[#1A1A2E] transition-colors hover:bg-[#e1e2e5] hover:text-[#7BB4FF] shadow-[0px_0.5px_0px_0px_var(--color-neutral-200)_inset,0px_8px_8px_0px_var(--color-neutral-200)] rounded-xl p-4">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.querySelector('#method')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="group flex cursor-pointer items-center justify-center gap-1.5 rounded-[16px] border-none bg-[#f0f1f3] px-6 py-3.5 text-[15px] font-semibold text-[#1A1A2E] transition-colors hover:bg-[#e1e2e5] hover:text-[#7BB4FF] shadow-[0px_0.5px_0px_0px_var(--color-neutral-200)_inset,0px_8px_8px_0px_var(--color-neutral-200)] p-4"
+                >
                   How it Works
                   <svg
                     className="transition-transform duration-200 group-hover:translate-x-1"
