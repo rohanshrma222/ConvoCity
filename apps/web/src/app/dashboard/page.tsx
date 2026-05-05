@@ -79,21 +79,21 @@ const steps = [
     description:
       "Select from our library of designer offices, Every space is built for flow.",
     icon: BookOpenText,
-    iconClassName: "bg-[#eadcff] text-[#16151f]",
+    iconClassName: "bg-white text-[#7BB4FF] shadow-sm border border-[#e0efff]",
   },
   {
     title: "Invite Your Team",
     description:
       "One click to share your link. Your team drops in as avatars, ready to mingle or huddle instantly.",
     icon: UserPlus,
-    iconClassName: "bg-[#e3f8db] text-[#16151f]",
+    iconClassName: "bg-gradient-to-br from-[#7BB4FF] to-[#5A9CF8] text-white shadow-[0_4px_14px_rgba(123,180,255,0.4)]",
   },
   {
     title: "Start Collaborating",
     description:
       "Share screens, leave notes, or just walk over to a teammate. Real presence, real impact.",
     icon: Sparkles,
-    iconClassName: "bg-[#8b6900] text-white",
+    iconClassName: "bg-white text-[#5A9CF8] shadow-sm border border-[#e0efff]",
   },
 ] as const;
 
@@ -103,26 +103,30 @@ function StepCard({
   icon: Icon,
   iconClassName,
   delay,
+  stepNumber,
 }: {
   title: string;
   description: string;
   icon: LucideIcon;
   iconClassName: string;
   delay: string;
+  stepNumber: number;
 }) {
   return (
     <article
-      className="rounded-[30px] border border-[#dbeafe] bg-gradient-to-br from-[#f4f9ff] to-[#e0efff] px-7 pb-6 pt-6 shadow-[0_8px_30px_rgba(123,180,255,0.12)] opacity-0 transition-transform duration-200 [animation:fade-up_420ms_cubic-bezier(0.23,1,0.32,1)_forwards] hover:-translate-y-2"
+      className="relative overflow-hidden rounded-[30px] border border-[#dbeafe] bg-gradient-to-br from-[#f4f9ff] to-[#e0efff] px-7 pb-8 pt-8 shadow-[0_8px_30px_rgba(123,180,255,0.12)] opacity-0 transition-transform duration-200 [animation:fade-up_420ms_cubic-bezier(0.23,1,0.32,1)_forwards] hover:-translate-y-2"
       style={{ animationDelay: delay }}
     >
-      <div className={`mb-8 flex size-[50px] items-center justify-center rounded-2xl ${iconClassName}`}>
-        <Icon className="size-5 stroke-[2.2]" />
+      <div className="pointer-events-none absolute -right-6 -top-8 select-none text-[140px] font-black leading-none text-[#7BB4FF]/[0.06]">
+        0{stepNumber}
       </div>
 
-      <h2 className="mb-3 text-[23px] font-bold tracking-[-0.04em] text-[#15161c]">{title}</h2>
-      <p className="mb-8 max-w-[250px] text-[16px] leading-[1.6] text-[#4f5563]">{description}</p>
+      <div className={`relative z-10 mb-8 flex size-[54px] items-center justify-center rounded-[18px] ${iconClassName}`}>
+        <Icon className="size-6 stroke-[2]" />
+      </div>
 
-
+      <h2 className="relative z-10 mb-3 text-[23px] font-bold tracking-[-0.04em] text-[#15161c]">{title}</h2>
+      <p className="relative z-10 max-w-[250px] text-[16px] leading-[1.6] text-[#4f5563]">{description}</p>
     </article>
   );
 }
@@ -163,14 +167,12 @@ function TestimonialCard({
   role: string;
   accent: string;
   accentText?: string;
-  background: string;
   className?: string;
   large?: boolean;
 }) {
   return (
     <article
-      className={`rounded-[32px] border border-black/[0.03] p-7 text-[#191b21] shadow-[0_1px_0_rgba(17,24,39,0.03),0_16px_38px_rgba(17,24,39,0.04)] transition-transform duration-200 ease-out hover:-translate-y-2 ${className ?? ""}`}
-      style={{ backgroundColor: background }}
+      className={`rounded-[32px] border border-[#dbeafe] bg-gradient-to-br from-[#f4f9ff] to-[#e0efff] p-7 text-[#191b21] shadow-[0_8px_30px_rgba(123,180,255,0.12)] transition-transform duration-200 ease-out hover:-translate-y-2 ${className ?? ""}`}
     >
       {large ? <div className="mb-5 text-[54px] font-black leading-none text-[#7BB4FF]">”</div> : null}
       <p
@@ -239,17 +241,21 @@ export default function DashboardPage() {
             </div>
 
             <nav className="ml-2 flex gap-1">
-              {["Explore", "Directory", "Events"].map((link, i) => (
+              {[
+                { name: "Features", href: "#features" },
+                { name: "Method", href: "#method" },
+                { name: "Wall of Love", href: "#testimonials" }
+              ].map((link) => (
                 <a
-                  key={link}
-                  href="#"
-                  className={`rounded-full px-3.5 py-1.5 text-sm no-underline transition-colors ${
-                    i === 0
-                      ? "border-b-2 border-[#7BB4FF] font-semibold text-[#7BB4FF]"
-                      : "border-b-2 border-transparent font-normal text-[#6B6B8A]"
-                  }`}
+                  key={link.name}
+                  href={link.href}
+                  className="rounded-full px-3.5 py-1.5 text-sm font-medium no-underline text-[#6B6B8A] transition-colors hover:text-[#7BB4FF] hover:bg-black/5"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.querySelector(link.href)?.scrollIntoView({ behavior: 'smooth' });
+                  }}
                 >
-                  {link}
+                  {link.name}
                 </a>
               ))}
             </nav>
@@ -311,7 +317,7 @@ export default function DashboardPage() {
                 >
                   Start for Free
                 </button>
-                <button className="group flex cursor-pointer items-center justify-center gap-1.5 rounded-[16px] border-none bg-[#f0f1f3] px-6 py-3.5 text-[15px] font-semibold text-[#1A1A2E] transition-colors hover:bg-[#e1e2e5] hover:text-[#4A148C] shadow-[0px_0.5px_0px_0px_var(--color-neutral-200)_inset,0px_8px_8px_0px_var(--color-neutral-200)] rounded-xl p-4">
+                <button className="group flex cursor-pointer items-center justify-center gap-1.5 rounded-[16px] border-none bg-[#f0f1f3] px-6 py-3.5 text-[15px] font-semibold text-[#1A1A2E] transition-colors hover:bg-[#e1e2e5] hover:text-[#7BB4FF] shadow-[0px_0.5px_0px_0px_var(--color-neutral-200)_inset,0px_8px_8px_0px_var(--color-neutral-200)] rounded-xl p-4">
                   How it Works
                   <svg
                     className="transition-transform duration-200 group-hover:translate-x-1"
@@ -339,7 +345,7 @@ export default function DashboardPage() {
         </section>
 
         <main className="relative z-10">
-          <section className="bg-white py-24 sm:py-32">
+          <section id="features" className="bg-white py-24 sm:py-32">
             <div className="mx-auto max-w-[1200px] px-8 sm:px-12 lg:px-20">
               <div className="mb-16 text-center">
                 <span className="text-[11px] font-bold tracking-[0.15em] text-[#7BB4FF] uppercase">FEATURES</span>
@@ -365,7 +371,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Box 2 */}
-                <div className="flex min-h-[420px] flex-col justify-between overflow-hidden rounded-[32px] border border-[#dbeafe] bg-gradient-to-br from-[#f4f9ff] to-[#e0efff] shadow-[0_8px_30px_rgba(123,180,255,0.12)] transition-transform duration-200 hover:-translate-y-1 md:col-span-2">
+                <div className="flex min-h-[420px] flex-col justify-between overflow-hidden rounded-[32px] border border-[#dbeafe] bg-[linear-gradient(to_bottom,#FFFFFF_31%,#A5CCFF_61%,#4491F7_100%)] shadow-[0_8px_30px_rgba(123,180,255,0.12)] transition-transform duration-200 hover:-translate-y-1 md:col-span-2">
                   <div className="flex flex-1 items-center justify-center pt-8 pb-0">
                     <div className="flex w-full items-center justify-center [&>svg]:h-[320px] [&>svg]:w-auto">
                       <ChatSvg />
@@ -380,7 +386,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Box 3 */}
-                <div className="flex min-h-[420px] flex-col justify-between overflow-hidden rounded-[32px] border border-[#dbeafe] bg-gradient-to-br from-[#f4f9ff] to-[#e0efff] shadow-[0_8px_30px_rgba(123,180,255,0.12)] transition-transform duration-200 hover:-translate-y-1 md:col-span-2">
+                <div className="flex min-h-[420px] flex-col justify-between overflow-hidden rounded-[32px] border border-[#dbeafe] bg-[linear-gradient(to_bottom_right,#FFFFFF_31%,#A5CCFF_61%,#4491F7_100%)] shadow-[0_8px_30px_rgba(123,180,255,0.12)] transition-transform duration-200 hover:-translate-y-1 md:col-span-2">
                   <div className="flex flex-1 items-center justify-center pt-8 pb-0">
                     <div className="flex w-full items-center justify-center [&>svg]:h-[350px] [&>svg]:w-auto">
                       <WhiteboardSvg />
@@ -395,7 +401,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Box 4 */}
-                <div className="flex min-h-[420px] flex-col overflow-hidden rounded-[32px] border border-[#dbeafe] bg-gradient-to-br from-[#f4f9ff] to-[#e0efff] shadow-[0_8px_30px_rgba(123,180,255,0.12)] transition-transform duration-200 hover:-translate-y-1 md:col-span-3">
+                <div className="flex min-h-[420px] flex-col overflow-hidden rounded-[32px] border border-[#dbeafe] bg-[linear-gradient(to_bottom_right,#FFFFFF_31%,#A5CCFF_61%,#4491F7_100%)] shadow-[0_8px_30px_rgba(123,180,255,0.12)] transition-transform duration-200 hover:-translate-y-1 md:col-span-3">
                   <div className="p-10">
                     <h3 className="mb-3 text-[22px] font-bold text-[#1a1a2e]">Smooth Screen Sharing</h3>
                     <p className="max-w-[420px] text-[16px] leading-[1.6] text-[#6b6b8a]">
@@ -428,7 +434,7 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          <section className="bg-gradient-to-br from-[#f4f9ff] to-[#e0efff] pb-24 pt-10">
+          <section id="method" className="bg-[#f7f7f8] pb-24 pt-10">
             <div className="mx-auto max-w-[1400px] px-8 sm:px-12 lg:px-20">
               <div className="mb-14 max-w-[660px]">
                 <h2 className="mb-4 text-[42px] font-bold leading-[1.05] tracking-[-0.06em] text-[#17181d] sm:text-[54px]">
@@ -441,13 +447,13 @@ export default function DashboardPage() {
 
               <div className="grid gap-6 lg:grid-cols-3">
                 {steps.map((step, index) => (
-                  <StepCard key={step.title} {...step} delay={`${index * 70}ms`} />
+                  <StepCard key={step.title} {...step} delay={`${index * 70}ms`} stepNumber={index + 1} />
                 ))}
               </div>
             </div>
           </section>
 
-          <section className="bg-[#f7f7f8] pb-28 pt-20">
+          <section id="testimonials" className="bg-[#f7f7f8] pb-28 pt-20">
             <div className="mx-auto grid max-w-[1400px] gap-12 px-8 sm:px-12 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-10 lg:px-20">
               <div className="pt-2">
                 <h2 className="max-w-[260px] text-[44px] font-bold leading-[0.95] tracking-[-0.07em] text-[#22242b] sm:text-[56px]">
@@ -458,17 +464,6 @@ export default function DashboardPage() {
                 <p className="mt-8 max-w-[255px] text-[17px] leading-[1.55] text-[#545a67]">
                   ConvoCity isn&apos;t just a tool; it&apos;s the heartbeat of remote-first organizations.
                 </p>
-
-                <div className="mt-8 flex items-center">
-                  <div className="flex items-center">
-                    <TeamAvatar label="X" bg="#77d4d1" text="#3d4c4a" />
-                    <TeamAvatar label="Y" bg="#f3efe8" text="#8f816e" overlap />
-                    <TeamAvatar label="z" bg="#5ebfc0" text="#ffffff" overlap />
-                  </div>
-                  <p className="ml-4 text-[20px] font-semibold tracking-[-0.03em] text-[#4f5560]">
-                    Join 2,000+ Teams
-                  </p>
-                </div>
               </div>
 
               <div className="grid gap-5 lg:grid-cols-[1fr_0.58fr]">
@@ -478,7 +473,6 @@ export default function DashboardPage() {
                   name="Sarah Jenkins"
                   role="Creative Director, Aura Studio"
                   accent="#7BB4FF"
-                  background="#ededf0"
                   className="lg:col-span-2 lg:min-h-[268px]"
                 />
 
@@ -488,7 +482,6 @@ export default function DashboardPage() {
                   role="Lead Engineer, Vortex"
                   accent="#7BB4FF"
                   accentText="#5a6772"
-                  background="#e7e8eb"
                   className="lg:min-h-[228px]"
                 />
 
@@ -498,7 +491,6 @@ export default function DashboardPage() {
                   role="Head of People, Bloom"
                   accent="#7BB4FF"
                   accentText="#6a6f82"
-                  background="#f0ebf7"
                   className="lg:min-h-[228px]"
                 />
               </div>
