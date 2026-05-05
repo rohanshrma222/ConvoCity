@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@livekit/krisp-noise-filter": "^0.4.1",
+    "@paper-design/shaders-react": "^0.0.76",
     "@repo/auth": "workspace:^",
     "@repo/types": "workspace:*",
     "@repo/ui": "workspace:*",
