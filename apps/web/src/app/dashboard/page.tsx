@@ -100,18 +100,14 @@ const steps = [
 function StepCard({
   title,
   description,
-  cta,
   icon: Icon,
   iconClassName,
-  suffix,
   delay,
 }: {
   title: string;
   description: string;
-  cta: string;
   icon: LucideIcon;
   iconClassName: string;
-  suffix: ReactNode;
   delay: string;
 }) {
   return (
@@ -126,13 +122,7 @@ function StepCard({
       <h2 className="mb-3 text-[23px] font-bold tracking-[-0.04em] text-[#15161c]">{title}</h2>
       <p className="mb-8 max-w-[250px] text-[16px] leading-[1.6] text-[#4f5563]">{description}</p>
 
-      <a
-        href="#"
-        className="inline-flex items-center gap-2 text-[15px] font-semibold text-[#9c74ff] transition-colors duration-150 ease-out hover:text-[#8354ff]"
-      >
-        <span>{cta}</span>
-        {suffix}
-      </a>
+
     </article>
   );
 }
