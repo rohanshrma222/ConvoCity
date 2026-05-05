@@ -158,7 +158,6 @@ function TestimonialCard({
   role,
   accent,
   accentText,
-  background,
   className,
   large = false,
 }: {
