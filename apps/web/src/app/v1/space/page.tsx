@@ -38,14 +38,14 @@ const BANNERS = [
     tag: "REMOTE",
     title: "Work from Anywhere",
     image: "/space/space1.png",
-    accent: "#d63fa3",
+    accent: "#5A9CF8",
   },
   {
     id: "b2",
     tag: "STUDY",
     title: "Study Room Open 24/7",
     image: "/space/space2.png",
-    accent: "#7c6248",
+    accent: "#7BB4FF",
     dark: false,
   },
   {
@@ -53,16 +53,16 @@ const BANNERS = [
     tag: "MEETING",
     title: "Meeting Room",
     image: "/space/space3.png",
-    accent: "#a855f7",
+    accent: "#9CC8FF",
   },
 ];
 
 function NavBar() {
   return (
-    <header className="sticky top-0 z-40 border-b border-[#e6e2f4] bg-white/90 backdrop-blur-[18px]">
-      <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#2a0e5c_0%,#4d2db7_50%,#2a0e5c_100%)]" />
+    <header className="sticky top-0 z-40 border-b border-[#dbeafe] bg-[#F5F4F8]/90 backdrop-blur-[18px]">
+      <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#5A9CF8_0%,#7BB4FF_50%,#5A9CF8_100%)]" />
       <div className="mx-auto flex h-14 max-w-[1460px] items-center px-6">
-        <Link href="/dashboard" className="text-lg font-bold tracking-[-0.5px] text-[#2d1b69]">
+        <Link href="/dashboard" className="text-lg font-bold tracking-[-0.5px] text-[#7BB4FF]">
           ConvoCity
         </Link>
       </div>
@@ -111,19 +111,19 @@ function BannerCarousel() {
                 className="absolute inset-0"
                 style={{
                   background: b.dark === false
-                    ? "linear-gradient(180deg,rgba(255,255,255,0.05) 0%,rgba(43,31,17,0.22) 100%)"
+                    ? "linear-gradient(180deg,rgba(255,255,255,0.05) 0%,rgba(17,43,85,0.22) 100%)"
                     : "linear-gradient(180deg,rgba(8,8,20,0.12) 0%,rgba(8,8,20,0.42) 100%)",
                 }}
               />
               <span
                 className="absolute left-3.5 top-3.5 rounded-[20px] bg-white/18 px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] backdrop-blur-[6px]"
-                style={{ color: b.dark ? "#3a2a10" : "#fff" }}
+                style={{ color: b.dark ? "#112b55" : "#fff" }}
               >
                 {b.tag}
               </span>
               <div
                 className="absolute bottom-[18px] left-4 right-4 text-lg font-bold leading-[1.25]"
-                style={{ color: b.dark ? "#2a1a05" : "#fff", textShadow: b.dark ? "none" : "0 2px 12px rgba(0,0,0,0.3)" }}
+                style={{ color: b.dark ? "#0a1a3a" : "#fff", textShadow: b.dark ? "none" : "0 2px 12px rgba(0,0,0,0.3)" }}
               >
                 {b.title}
               </div>
@@ -138,7 +138,7 @@ function BannerCarousel() {
             key={i}
             onClick={() => setActive(i)}
             className="h-2 rounded-[4px] border-none p-0 transition-[width,background] duration-300"
-            style={{ width: i === active ? 24 : 8, background: i === active ? "#531f96" : "#d0c8f0" }}
+            style={{ width: i === active ? 24 : 8, background: i === active ? "#5A9CF8" : "#bfdbfe" }}
           />
         ))}
       </div>
@@ -159,7 +159,7 @@ function SpaceCard({
   onDelete: () => void;
   isDeleting: boolean;
 }) {
-  const colors = ["#ddd6fe", "#bbf7d0", "#fde68a", "#fecdd3", "#bfdbfe"];
+  const colors = ["#bfdbfe", "#bbf7d0", "#fde68a", "#fecdd3", "#dbeafe"];
   const bg = space.color ?? colors[space.id.charCodeAt(0) % colors.length];
 
   return (
@@ -170,7 +170,7 @@ function SpaceCard({
     >
       <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-black/12 text-[22px]">🏠</div>
       <div>
-        <p className="mb-0.5 text-[15px] font-bold text-[#1a1a2e]">{space.name}</p>
+        <p className="mb-0.5 text-[15px] font-bold text-[#1A1A2E]">{space.name}</p>
         <p className="text-xs text-black/50">
           {space._count.members} member{space._count.members !== 1 ? "s" : ""} · {formatDate(space.createdAt)}
         </p>
@@ -193,19 +193,19 @@ function SpaceCard({
 
 function EmptyState({ onExplore }: { onExplore: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-4 rounded-3xl bg-[#f6f5ff] px-6 py-12 text-center">
+    <div className="flex flex-col items-center gap-4 rounded-3xl bg-[#eff6ff] px-6 py-12 text-center">
       <img
         src="/assets/char1.png"
         alt="ConvoCity mascot"
         className="mb-2 h-[120px] w-[120px] object-contain [image-rendering:pixelated]"
       />
-      <h2 className="text-[22px] font-bold text-[#6c3ffb]">Quiet in the Orbit</h2>
+      <h2 className="text-[22px] font-bold text-[#5A9CF8]">Quiet in the Orbit</h2>
       <p className="max-w-[320px] text-sm leading-[1.7] text-[#888]">
         You haven&apos;t visited any Spaces. Create or enter a Space to start your journey.
       </p>
       <button
         onClick={onExplore}
-        className="mt-2 rounded-3xl bg-[#531f96] px-9 py-3.5 text-[15px] font-semibold text-white shadow-[0_8px_30px_rgba(83,31,150,0.28)] transition-colors duration-150 ease-out hover:bg-[#431482]"
+        className="mt-2 rounded-3xl bg-[#5A9CF8] px-9 py-3.5 text-[15px] font-semibold text-white shadow-[0_8px_30px_rgba(90,156,248,0.28)] transition-colors duration-150 ease-out hover:bg-[#4A8EF0]"
       >
         Start Exploring
       </button>
@@ -215,10 +215,10 @@ function EmptyState({ onExplore }: { onExplore: () => void }) {
 
 function SkeletonCard() {
   return (
-    <div className="min-h-[140px] rounded-[20px] bg-[#f0eeff] p-5 [animation:pulse_1.6s_ease-in-out_infinite]">
-      <div className="mb-3 h-11 w-11 rounded-[14px] bg-[#d8d0f8]" />
-      <div className="mb-2 h-[14px] w-[60%] rounded-md bg-[#d8d0f8]" />
-      <div className="h-[11px] w-[40%] rounded-md bg-[#e2dcfc]" />
+    <div className="min-h-[140px] rounded-[20px] bg-[#eff6ff] p-5 [animation:pulse_1.6s_ease-in-out_infinite]">
+      <div className="mb-3 h-11 w-11 rounded-[14px] bg-[#bfdbfe]" />
+      <div className="mb-2 h-[14px] w-[60%] rounded-md bg-[#bfdbfe]" />
+      <div className="h-[11px] w-[40%] rounded-md bg-[#dbeafe]" />
     </div>
   );
 }
@@ -325,10 +325,10 @@ function SpaceDashboardPageContent() {
         * { box-sizing: border-box; }
       `}</style>
 
-      <main className="relative min-h-screen overflow-hidden bg-[#f4f5f9] text-[#1a1a2e]">
+      <main className="relative min-h-screen overflow-hidden bg-[#F5F4F8] text-[#1A1A2E]">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          <div className="absolute left-[-10%] top-[76px] h-80 w-80 rounded-full bg-[rgba(203,184,255,0.35)] blur-[72px]" />
-          <div className="absolute right-[-8%] top-[120px] h-[380px] w-[380px] rounded-full bg-[rgba(216,204,255,0.45)] blur-[88px]" />
+          <div className="absolute left-[-10%] top-[76px] h-80 w-80 rounded-full bg-[rgba(123,180,255,0.22)] blur-[72px]" />
+          <div className="absolute right-[-8%] top-[120px] h-[380px] w-[380px] rounded-full bg-[rgba(156,200,255,0.28)] blur-[88px]" />
         </div>
 
         <NavBar />
@@ -338,7 +338,7 @@ function SpaceDashboardPageContent() {
         </div>
 
         <div className="relative z-1 mx-auto max-w-[960px] px-6">
-          <div className="mb-5 flex flex-wrap items-center gap-4 rounded-[28px] border border-white/72 bg-white/68 p-4 shadow-[0_18px_48px_rgba(83,31,150,0.08)] backdrop-blur-[16px]">
+          <div className="mb-5 flex flex-wrap items-center gap-4 rounded-[28px] border border-white/72 bg-white/68 p-4 shadow-[0_18px_48px_rgba(90,156,248,0.08)] backdrop-blur-[16px]">
             <div className="flex gap-1">
               {(["recent", "myspaces"] as const).map((tab) => (
                 <button
@@ -346,8 +346,8 @@ function SpaceDashboardPageContent() {
                   onClick={() => setActiveTab(tab)}
                   className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm transition-colors duration-150 ease-out ${
                     activeTab === tab
-                      ? "border-[#531f96] font-semibold text-[#531f96]"
-                      : "border-transparent font-normal text-[#666]"
+                      ? "border-[#5A9CF8] font-semibold text-[#5A9CF8]"
+                      : "border-transparent font-normal text-[#6B6B8A]"
                   }`}
                 >
                   {tab === "recent" ? (
@@ -375,7 +375,7 @@ function SpaceDashboardPageContent() {
                     e.preventDefault();
                     searchInputRef.current?.focus();
                   }}
-                  className="absolute left-3 top-1/2 z-1 flex -translate-y-1/2 cursor-text items-center justify-center text-[#8f88a8]"
+                  className="absolute left-3 top-1/2 z-1 flex -translate-y-1/2 cursor-text items-center justify-center text-[#6B6B8A]"
                 >
                   <Search size={14} strokeWidth={2.1} />
                 </div>
@@ -384,7 +384,7 @@ function SpaceDashboardPageContent() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search spaces"
-                  className="w-full rounded-[22px] border-[1.5px] border-[#e0dcf8] bg-white px-3 py-[9px] pl-[38px] text-sm text-[#333] outline-none transition-colors duration-150 ease-out focus:border-[#531f96]"
+                  className="w-full rounded-[22px] border-[1.5px] border-[#dbeafe] bg-white px-3 py-[9px] pl-[38px] text-sm text-[#333] outline-none transition-colors duration-150 ease-out focus:border-[#5A9CF8]"
                 />
               </div>
             </AnimateIcon>
@@ -393,7 +393,7 @@ function SpaceDashboardPageContent() {
               <button
                 onClick={() => setJoinOpen(true)}
                 disabled={isBusy}
-                className="group flex items-center gap-1.5 whitespace-nowrap rounded-[22px] border-[1.5px] border-[#e0dcf8] bg-white px-[18px] py-[9px] text-sm font-medium text-[#444] transition-colors duration-150 ease-out hover:border-[#531f96] disabled:cursor-not-allowed"
+                className="group flex items-center gap-1.5 whitespace-nowrap rounded-[22px] border-[1.5px] border-[#dbeafe] bg-white px-[18px] py-[9px] text-sm font-medium text-[#444] transition-colors duration-150 ease-out hover:border-[#5A9CF8] disabled:cursor-not-allowed"
               >
                 <Key size={14} strokeWidth={2.1} />
                 <span>Enter with Code</span>
@@ -402,14 +402,14 @@ function SpaceDashboardPageContent() {
               <button
                 onClick={() => navigate("/v1/create")}
                 disabled={isBusy}
-                className="whitespace-nowrap rounded-[22px] bg-[#7042b3] px-[18px] py-[9px] text-sm font-semibold text-white shadow-[0_10px_28px_rgba(83,31,150,0.26)] transition-colors duration-150 ease-out hover:bg-[#6434a6] disabled:cursor-not-allowed"
+                className="whitespace-nowrap rounded-[22px] bg-[#7BB4FF] px-[18px] py-[9px] text-sm font-semibold text-white shadow-[0_10px_28px_rgba(123,180,255,0.35)] transition-colors duration-150 ease-out hover:bg-[#5A9CF8] disabled:cursor-not-allowed"
               >
                 + Create Space
               </button>
             </div>
           </div>
 
-          <div className="min-h-[220px] rounded-[32px] border border-white/82 bg-white/78 p-6 shadow-[0_18px_48px_rgba(83,31,150,0.08)] backdrop-blur-[16px]">
+          <div className="min-h-[220px] rounded-[32px] border border-white/82 bg-white/78 p-6 shadow-[0_18px_48px_rgba(90,156,248,0.08)] backdrop-blur-[16px]">
             {loading ? (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -437,22 +437,22 @@ function SpaceDashboardPageContent() {
 
         <Dialog onOpenChange={setJoinOpen} open={joinOpen}>
           <DialogContent
-            className="!max-w-sm !rounded-2xl !border-[#e8e8f0] !bg-white !p-7 !shadow-[0_8px_40px_rgba(0,0,0,0.12)]"
+            className="!max-w-sm !rounded-2xl !border-[#dbeafe] !bg-white !p-7 !shadow-[0_8px_40px_rgba(0,0,0,0.12)]"
             containerClassName="bg-black/30"
           >
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-[17px] font-bold text-[#111]">Enter with Code</h2>
+              <h2 className="text-[17px] font-bold text-[#1A1A2E]">Enter with Code</h2>
               <button
                 onClick={() => setJoinOpen(false)}
                 aria-label="Close"
-                className="flex rounded-md p-1 text-[18px] leading-none text-[#888] transition-colors duration-150 ease-out hover:bg-[#f5f3fb] hover:text-[#555]"
+                className="flex rounded-md p-1 text-[18px] leading-none text-[#6B6B8A] transition-colors duration-150 ease-out hover:bg-[#eff6ff] hover:text-[#555]"
               >
                 ×
               </button>
             </div>
 
             <div className="mb-4 flex flex-col gap-2">
-              <label className="text-sm font-semibold text-[#111]" htmlFor="invite-code">
+              <label className="text-sm font-semibold text-[#1A1A2E]" htmlFor="invite-code">
                 Invite Code
               </label>
               <input
@@ -462,14 +462,14 @@ function SpaceDashboardPageContent() {
                 onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                 placeholder="The entry code is 6 or more digits."
                 value={inviteCode}
-                className="w-full rounded-xl border-[1.5px] border-[#e0dcf8] bg-[#fafafa] px-[14px] py-[11px] text-sm text-[#333] outline-none transition-colors duration-150 ease-out focus:border-[#a89cf5]"
+                className="w-full rounded-xl border-[1.5px] border-[#dbeafe] bg-[#fafafa] px-[14px] py-[11px] text-sm text-[#333] outline-none transition-colors duration-150 ease-out focus:border-[#7BB4FF]"
               />
             </div>
 
             <button
               disabled={joinLoading}
               onClick={handleJoinSpace}
-              className="w-full rounded-[14px] bg-[#e8e4fc] p-[13px] text-[15px] font-semibold text-[#7c6af5] transition-colors duration-150 ease-out hover:bg-[#d4ccf8] hover:text-[#531f96] disabled:cursor-not-allowed disabled:opacity-70"
+              className="w-full rounded-[14px] bg-[#e0efff] p-[13px] text-[15px] font-semibold text-[#5A9CF8] transition-colors duration-150 ease-out hover:bg-[#bfdbfe] hover:text-[#4A8EF0] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {joinLoading ? "Joining..." : "Enter"}
             </button>
@@ -490,19 +490,19 @@ export default function SpaceDashboardPage() {
 
 function SpaceDashboardFallback() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#f4f5f9] text-[#1a1a2e]">
+    <main className="relative min-h-screen overflow-hidden bg-[#F5F4F8] text-[#1A1A2E]">
       <NavBar />
 
       <div className="relative z-1 px-6 pt-6">
-        <div className="mb-7 h-[230px] animate-pulse rounded-[18px] bg-[#e7e2fb]" />
+        <div className="mb-7 h-[230px] animate-pulse rounded-[18px] bg-[#dbeafe]" />
       </div>
 
       <div className="relative z-1 mx-auto max-w-[960px] px-6">
-        <div className="mb-5 rounded-[28px] border border-white/72 bg-white/68 p-4 shadow-[0_18px_48px_rgba(83,31,150,0.08)] backdrop-blur-[16px]">
-          <div className="h-12 animate-pulse rounded-[22px] bg-[#ece8fb]" />
+        <div className="mb-5 rounded-[28px] border border-white/72 bg-white/68 p-4 shadow-[0_18px_48px_rgba(90,156,248,0.08)] backdrop-blur-[16px]">
+          <div className="h-12 animate-pulse rounded-[22px] bg-[#eff6ff]" />
         </div>
 
-        <div className="min-h-[220px] rounded-[32px] border border-white/82 bg-white/78 p-6 shadow-[0_18px_48px_rgba(83,31,150,0.08)] backdrop-blur-[16px]">
+        <div className="min-h-[220px] rounded-[32px] border border-white/82 bg-white/78 p-6 shadow-[0_18px_48px_rgba(90,156,248,0.08)] backdrop-blur-[16px]">
           <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <SkeletonCard key={i} />
