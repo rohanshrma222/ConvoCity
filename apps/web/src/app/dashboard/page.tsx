@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   BookOpenText,
   Camera,
@@ -196,6 +196,7 @@ function TestimonialCard({
 export default function DashboardPage() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
+  const [chatAnimationKey, setChatAnimationKey] = useState(0);
 
 
   async function handleSignOut() {
@@ -321,7 +322,7 @@ export default function DashboardPage() {
                     e.preventDefault();
                     document.querySelector('#method')?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="group flex cursor-pointer items-center justify-center gap-1.5 rounded-[16px] border-none bg-[#f0f1f3] px-6 py-3.5 text-[15px] font-semibold text-[#1A1A2E] transition-colors hover:bg-[#e1e2e5] hover:text-[#7BB4FF] shadow-[0px_0.5px_0px_0px_var(--color-neutral-200)_inset,0px_8px_8px_0px_var(--color-neutral-200)] p-4"
+                  className="group flex cursor-pointer items-center justify-center gap-1.5 rounded-[16px] border-none bg-[#f0f1f3] px-6 py-3.5 text-[15px] font-semibold text-[#1A1A2E] transition-colors hover:text-[#7BB4FF] shadow-[0px_0.5px_0px_0px_#4A8EF0_inset] p-4"
                 >
                   How it Works
                   <svg
@@ -376,10 +377,13 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Box 2 */}
-                <div className="flex min-h-[420px] flex-col justify-between overflow-hidden rounded-[32px] border border-[#dbeafe] bg-[linear-gradient(to_bottom,#FFFFFF_31%,#A5CCFF_61%,#4491F7_100%)] shadow-[0_8px_30px_rgba(123,180,255,0.12)] transition-transform duration-200 hover:-translate-y-1 md:col-span-2">
+                <div
+                  className="flex min-h-[420px] flex-col justify-between overflow-hidden rounded-[32px] border border-[#dbeafe] bg-[linear-gradient(to_bottom,#FFFFFF_31%,#A5CCFF_61%,#4491F7_100%)] shadow-[0_8px_30px_rgba(123,180,255,0.12)] transition-transform duration-200 hover:-translate-y-1 md:col-span-2"
+                  onMouseEnter={() => setChatAnimationKey((key) => key + 1)}
+                >
                   <div className="flex flex-1 items-center justify-center pt-8 pb-0">
                     <div className="flex w-full items-center justify-center [&>svg]:h-[320px] [&>svg]:w-auto">
-                      <ChatSvg />
+                      <ChatSvg animationKey={chatAnimationKey} />
                     </div>
                   </div>
                   <div className="p-10 pt-8">
