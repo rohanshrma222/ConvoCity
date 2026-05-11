@@ -1,3 +1,5 @@
+'use client';
+import { motion } from 'motion/react';
 
 export default function ProximitySvg() {
   return (
@@ -19,14 +21,28 @@ export default function ProximitySvg() {
 <rect x="146.632" y="57.7637" width="266.603" height="222.169" rx="72" fill="black"/>
 </g>
 </g>
-<g filter="url(#filter1_d_0_1)">
-<rect x="174" y="125" width="73" height="74" rx="30" fill="#71A9F2"/>
-<rect x="174.5" y="125.5" width="72" height="73" rx="29.5" stroke="black"/>
-</g>
-<g filter="url(#filter2_d_0_1)">
-<rect x="313" y="127" width="74" height="74" rx="30" fill="#71A9F2"/>
-<rect x="313.5" y="127.5" width="73" height="73" rx="29.5" stroke="black"/>
-</g>
+<motion.g
+  animate={{ x: [-30, 0, -30] }}
+  transition={{ duration: 3, ease: 'easeInOut', repeat: Infinity, repeatType: 'loop' }}
+>
+  <g filter="url(#filter1_d_0_1)">
+    <rect x="174" y="125" width="73" height="74" rx="30" fill="#71A9F2"/>
+    <rect x="174.5" y="125.5" width="72" height="73" rx="29.5" stroke="black"/>
+  </g>
+</motion.g>
+<motion.g
+  animate={{ x: [30, 0, 30] }}
+  transition={{ duration: 3, ease: 'easeInOut', repeat: Infinity, repeatType: 'loop' }}
+>
+  <g filter="url(#filter2_d_0_1)">
+    <rect x="313" y="127" width="74" height="74" rx="30" fill="#71A9F2"/>
+    <rect x="313.5" y="127.5" width="73" height="73" rx="29.5" stroke="black"/>
+  </g>
+</motion.g>
+<motion.g
+  animate={{ x: [30, 0, 30] }}
+  transition={{ duration: 3, ease: 'easeInOut', repeat: Infinity, repeatType: 'loop' }}
+>
 <rect x="329.699" y="172.7" width="2.96226" height="2.96226" fill="#46465E"/>
 <rect x="329.699" y="169.737" width="2.96226" height="2.96226" fill="#46465E"/>
 <rect x="329.699" y="166.775" width="2.96226" height="2.96226" fill="#3A3A50"/>
@@ -203,6 +219,11 @@ export default function ProximitySvg() {
 <rect x="368.209" y="160.851" width="2.96226" height="2.96226" fill="#46465F"/>
 <rect x="368.209" y="157.888" width="2.96226" height="2.96226" fill="#46465F"/>
 <rect x="368.209" y="154.926" width="2.96226" height="2.96226" fill="#46465F"/>
+</motion.g>
+<motion.g
+  animate={{ x: [-30, 0, -30] }}
+  transition={{ duration: 3, ease: 'easeInOut', repeat: Infinity, repeatType: 'loop' }}
+>
 <rect x="186.918" y="175.662" width="2.96226" height="2.96226" fill="#674D49"/>
 <rect x="186.918" y="172.7" width="2.96226" height="2.96226" fill="#674D49"/>
 <rect x="186.918" y="169.737" width="2.96226" height="2.96226" fill="#46465E"/>
@@ -395,16 +416,55 @@ export default function ProximitySvg() {
 <rect x="231.353" y="166.775" width="2.96226" height="2.96226" fill="#46465E"/>
 <rect x="231.353" y="163.813" width="2.96226" height="2.96226" fill="#46465E"/>
 <rect x="231.353" y="160.851" width="2.96226" height="2.96226" fill="#565972"/>
-<path d="M313.707 165.707C314.098 165.317 314.098 164.683 313.707 164.293L307.343 157.929C306.953 157.538 306.319 157.538 305.929 157.929C305.538 158.319 305.538 158.953 305.929 159.343L311.586 165L305.929 170.657C305.538 171.047 305.538 171.681 305.929 172.071C306.319 172.462 306.953 172.462 307.343 172.071L313.707 165.707ZM281 165V166H282V165V164H281V165ZM284 165V166H286V165V164H284V165ZM288 165V166H290V165V164H288V165ZM292 165V166H294V165V164H292V165ZM296 165V166H298V165V164H296V165ZM300 165V166H302V165V164H300V165ZM304 165V166H306V165V164H304V165ZM308 165V166H310V165V164H308V165ZM312 165V166H313V165V164H312V165ZM313.707 165.707C314.098 165.317 314.098 164.683 313.707 164.293L307.343 157.929C306.953 157.538 306.319 157.538 305.929 157.929C305.538 158.319 305.538 158.953 305.929 159.343L311.586 165L305.929 170.657C305.538 171.047 305.538 171.681 305.929 172.071C306.319 172.462 306.953 172.462 307.343 172.071L313.707 165.707ZM281 165V166H282V165V164H281V165ZM284 165V166H286V165V164H284V165ZM288 165V166H290V165V164H288V165ZM292 165V166H294V165V164H292V165ZM296 165V166H298V165V164H296V165ZM300 165V166H302V165V164H300V165ZM304 165V166H306V165V164H304V165ZM308 165V166H310V165V164H308V165ZM312 165V166H313V165V164H312V165Z" fill="black"/>
-<path d="M247.293 164.293C246.902 164.683 246.902 165.317 247.293 165.707L253.657 172.071C254.047 172.462 254.681 172.462 255.071 172.071C255.462 171.681 255.462 171.047 255.071 170.657L249.414 165L255.071 159.343C255.462 158.953 255.462 158.319 255.071 157.929C254.681 157.538 254.047 157.538 253.657 157.929L247.293 164.293ZM281 165V164H279.969V165V166H281V165ZM277.906 165V164H275.844V165V166H277.906V165ZM273.781 165V164H271.719V165V166H273.781V165ZM269.656 165V164H267.594V165V166H269.656V165ZM265.531 165V164H263.469V165V166H265.531V165ZM261.406 165V164H259.344V165V166H261.406V165ZM257.281 165V164H255.219V165V166H257.281V165ZM253.156 165V164H251.094V165V166H253.156V165ZM249.031 165V164H248V165V166H249.031V165ZM247.293 164.293C246.902 164.683 246.902 165.317 247.293 165.707L253.657 172.071C254.047 172.462 254.681 172.462 255.071 172.071C255.462 171.681 255.462 171.047 255.071 170.657L249.414 165L255.071 159.343C255.462 158.953 255.462 158.319 255.071 157.929C254.681 157.538 254.047 157.538 253.657 157.929L247.293 164.293ZM281 165V164H279.969V165V166H281V165ZM277.906 165V164H275.844V165V166H277.906V165ZM273.781 165V164H271.719V165V166H273.781V165ZM269.656 165V164H267.594V165V166H269.656V165ZM265.531 165V164H263.469V165V166H265.531V165ZM261.406 165V164H259.344V165V166H261.406V165ZM257.281 165V164H255.219V165V166H257.281V165ZM253.156 165V164H251.094V165V166H253.156V165ZM249.031 165V164H248V165V166H249.031V165Z" fill="black"/>
-<path d="M212 101C244.577 101 271 127.631 271 160.5C271 193.369 244.577 220 212 220C179.423 220 153 193.369 153 160.5C153 127.631 179.423 101 212 101Z" stroke="black" strokeWidth="2"/>
-<path d="M349 103C381.577 103 408 129.631 408 162.5C408 195.369 381.577 222 349 222C316.423 222 290 195.369 290 162.5C290 129.631 316.423 103 349 103Z" stroke="black" strokeWidth="2"/>
+</motion.g>
+
+<motion.line
+  x1={281} y1={165} y2={165}
+  stroke="black" strokeWidth="2" 
+  animate={{ x2: [341, 312, 341] } as any}
+  initial={{ x2: 320 } as any}
+  transition={{ duration: 3, ease: 'easeInOut', repeat: Infinity, repeatType: 'loop' }}
+/>
+<motion.g
+  animate={{ x: [29, 0, 29] }}
+  transition={{ duration: 3, ease: 'easeInOut', repeat: Infinity, repeatType: 'loop' }}
+>
+  <path d="M313.707 165.707C314.098 165.317 314.098 164.683 313.707 164.293L307.343 157.929C306.953 157.538 306.319 157.538 305.929 157.929C305.538 158.319 305.538 158.953 305.929 159.343L311.586 165L305.929 170.657C305.538 171.047 305.538 171.681 305.929 172.071C306.319 172.462 306.953 172.462 307.343 172.071L313.707 165.707Z" fill="black"/>
+</motion.g>
+<motion.line
+  x2={281} y2={165} y1={165}
+  stroke="black" strokeWidth="2"
+  animate={{ x1: [219, 249, 219] } as any}
+  initial={{ x1: 240 } as any}
+  transition={{ duration: 3, ease: 'easeInOut', repeat: Infinity, repeatType: 'loop' }}
+/>
+<motion.g
+  animate={{ x: [-30, 0, -30] }}
+  transition={{ duration: 3, ease: 'easeInOut', repeat: Infinity, repeatType: 'loop' }}
+>
+  <path d="M247.293 164.293C246.902 164.683 246.902 165.317 247.293 165.707L253.657 172.071C254.047 172.462 254.681 172.462 255.071 172.071C255.462 171.681 255.462 171.047 255.071 170.657L249.414 165L255.071 159.343C255.462 158.953 255.462 158.319 255.071 157.929C254.681 157.538 254.047 157.538 253.657 157.929L247.293 164.293Z" fill="black"/>
+</motion.g>
+
+<motion.path
+  d="M212 101C244.577 101 271 127.631 271 160.5C271 193.369 244.577 220 212 220C179.423 220 153 193.369 153 160.5C153 127.631 179.423 101 212 101Z"
+  stroke="black"
+  strokeWidth="2"
+  animate={{ x: [-30, 0, -30] }}
+  transition={{ duration: 3, ease: 'easeInOut', repeat: Infinity, repeatType: 'loop' }}
+/>
+<motion.path
+  d="M349 103C381.577 103 408 129.631 408 162.5C408 195.369 381.577 222 349 222C316.423 222 290 195.369 290 162.5C290 129.631 316.423 103 349 103Z"
+  stroke="black"
+  strokeWidth="2"
+  animate={{ x: [30, 0, 30] }}
+  transition={{ duration: 3, ease: 'easeInOut', repeat: Infinity, repeatType: 'loop' }}
+/>
 <defs>
 <filter id="filter0_d_0_1" x="142.632" y="57.7637" width="274.603" height="230.169" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
 <feFlood floodOpacity="0" result="BackgroundImageFix"/>
 <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-<feOffset dy="4"/>
-<feGaussianBlur stdDeviation="2"/>
+{/* <feOffset dy="4"/>
+<feGaussianBlur stdDeviation="2"/> */}
 <feComposite in2="hardAlpha" operator="out"/>
 <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
 <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_1"/>
