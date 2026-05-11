@@ -23,6 +23,7 @@ export default function ProximitySvg() {
         </g>
         {/* Visible gray diamond grid overlay */}
         <g stroke="#6B7280" strokeWidth="1" fill="none" opacity="0.4">
+          {/* Original 3×3 grid */}
           <rect y="0.5" width="109.908" height="109.771" transform="matrix(0.866025 0.5 -0.866025 0.5 96.3644 111.022)" />
           <rect y="0.5" width="109.908" height="109.771" transform="matrix(0.866025 0.5 -0.866025 0.5 192.295 55.6357)" />
           <rect y="0.5" width="109.908" height="109.771" transform="matrix(0.866025 0.5 -0.866025 0.5 288.226 0.250977)" />
@@ -32,6 +33,19 @@ export default function ProximitySvg() {
           <rect y="0.5" width="109.908" height="109.771" transform="matrix(0.866025 0.5 -0.866025 0.5 288.462 221.929)" />
           <rect y="0.5" width="109.908" height="109.771" transform="matrix(0.866025 0.5 -0.866025 0.5 384.393 166.543)" />
           <rect y="0.5" width="109.908" height="109.771" transform="matrix(0.866025 0.5 -0.866025 0.5 480.323 111.158)" />
+          {/* Extended cells — left column */}
+          <rect y="0.5" width="109.908" height="109.771" transform="matrix(0.866025 0.5 -0.866025 0.5 0.434 166.412)" />
+          <rect y="0.5" width="109.908" height="109.771" transform="matrix(0.866025 0.5 -0.866025 0.5 96.504 221.862)" />
+          <rect y="0.5" width="109.908" height="109.771" transform="matrix(0.866025 0.5 -0.866025 0.5 192.574 277.312)" />
+          <rect y="0.5" width="109.908" height="109.771" transform="matrix(0.866025 0.5 -0.866025 0.5 288.644 332.762)" />
+          {/* Extended cells — top row */}
+          <rect y="0.5" width="109.908" height="109.771" transform="matrix(0.866025 0.5 -0.866025 0.5 0.294 55.572)" />
+          <rect y="0.5" width="109.908" height="109.771" transform="matrix(0.866025 0.5 -0.866025 0.5 96.225 0.186)" />
+          {/* Extended cells — right column */}
+          <rect y="0.5" width="109.908" height="109.771" transform="matrix(0.866025 0.5 -0.866025 0.5 480.226 0.311)" />
+          {/* Extended cells — bottom row */}
+          <rect y="0.5" width="109.908" height="109.771" transform="matrix(0.866025 0.5 -0.866025 0.5 384.574 277.372)" />
+          <rect y="0.5" width="109.908" height="109.771" transform="matrix(0.866025 0.5 -0.866025 0.5 480.505 221.986)" />
         </g>
         <motion.g
           animate={{ x: [-30, 0, -30] }}
