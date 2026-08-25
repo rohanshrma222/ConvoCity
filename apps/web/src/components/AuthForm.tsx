@@ -1,9 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, signUp } from "@/lib/auth-client";
+
+const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+  state_mismatch: "Your sign-in session expired or was tampered with. Please try again.",
+  state_not_found: "Your sign-in session expired. Please try again.",
+  please_restart_the_process: "Something interrupted your sign-in. Please try again.",
+  oauth_provider_not_found: "Google sign-in is temporarily unavailable. Please try again later.",
+  unable_to_get_user_info: "We couldn't retrieve your Google account details. Please try again.",
+};
 
 // ── Google SVG ───────────────────────────────────────────────────
 const GoogleIcon = () => (
@@ -31,6 +39,7 @@ interface AuthFormProps {
 
 export default function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [name, setName]       = useState("");
   const [email, setEmail]     = useState("");
   const [password, setPassword] = useState("");
@@ -39,6 +48,15 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const isSignup = mode === "signup";
+
+  // ── Surface OAuth errors bounced back from the backend ─────────────
+  useEffect(() => {
+    const oauthError = searchParams.get("error");
+    if (!oauthError) return;
+    setError(OAUTH_ERROR_MESSAGES[oauthError] ?? "Google sign-in failed. Please try again.");
+    router.replace(mode === "signup" ? "/sign-up" : "/sign-in");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // ── Google OAuth ────────────────────────────────────────────────
   async function handleGoogle() {
