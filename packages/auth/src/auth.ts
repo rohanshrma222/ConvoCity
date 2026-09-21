@@ -5,13 +5,8 @@ import { prisma } from "@repo/db";
 
 const betterAuthUrl = (process.env.BETTER_AUTH_URL || "http://localhost:3002").replace(/\/+$/, "");
 const webUrl = (process.env.WEB_URL || "http://localhost:3000").replace(/\/+$/, "");
-// Cookie security must track the actual scheme in use, not NODE_ENV: Render
-// doesn't set NODE_ENV=production for web services, so gating on it left
-// state cookies as sameSite=lax/non-secure in production, which cross-site
-// browsers drop between the sign-in request and the OAuth callback (the
-// frontend and backend live on different *.onrender.com sites) and surfaces
-// as a state_mismatch error.
-const isProduction = betterAuthUrl.startsWith("https://");
+
+const isSecure = betterAuthUrl.startsWith("https://");
 
 export const auth = betterAuth({
   baseURL: betterAuthUrl,
@@ -35,10 +30,10 @@ export const auth = betterAuth({
     errorURL: `${webUrl}/sign-in`,
   },
   advanced: {
-    useSecureCookies: isProduction,
+    useSecureCookies: isSecure,
     defaultCookieAttributes: {
-      sameSite: isProduction ? "none" : "lax",
-      secure: isProduction,
+      sameSite: "lax",
+      secure: isSecure,
     },
   },
 });

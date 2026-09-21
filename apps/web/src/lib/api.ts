@@ -14,8 +14,7 @@ type ApiFetchOptions = RequestInit & {
   redirectOnUnauthorized?: boolean;
 };
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_AUTH_URL ?? "http://localhost:3002";
+const API_BASE_URL = "/api/backend";
 
 export async function apiFetch<T>(
   path: string,

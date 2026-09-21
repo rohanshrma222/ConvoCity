@@ -185,11 +185,6 @@ export default function AuthForm({ mode }: AuthFormProps) {
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between ml-1 mr-1">
                 <label htmlFor="password" className="text-[13px] font-semibold text-[#1A1A2E]">Password</label>
-                {!isSignup && (
-                  <Link href="/forgot-password" className="text-[12px] font-medium text-[#7042b3] hover:text-[#4A148C] transition-colors">
-                    Forgot password?
-                  </Link>
-                )}
               </div>
               <input
                 id="password"
